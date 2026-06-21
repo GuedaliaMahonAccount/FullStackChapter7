@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="homeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14532d" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#6ee7b7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#homeGrad)" />
+  <!-- House outline -->
+  <path d="M 200,60 L 100,140 L 130,140 L 130,220 L 270,220 L 270,140 L 300,140 Z" fill="url(#homeGrad)" stroke="url(#glowGrad)" stroke-width="5" filter="url(#glow)" />
+  <!-- Window and Door -->
+  <rect x="185" y="165" width="30" height="55" rx="3" fill="#10b981" opacity="0.8" />
+  <rect x="150" y="110" width="30" height="30" rx="4" fill="none" stroke="#6ee7b7" stroke-width="3" />
+  <rect x="220" y="110" width="30" height="30" rx="4" fill="none" stroke="#6ee7b7" stroke-width="3" />
+  <!-- Chimney -->
+  <path d="M 240,92 L 240,75 H 260 L 260,108 Z" fill="url(#homeGrad)" stroke="url(#glowGrad)" stroke-width="3" />
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-weight="bold" font-size="20" fill="#e2e8f0" text-anchor="middle">HOME &amp; KITCHEN</text>
+</svg>

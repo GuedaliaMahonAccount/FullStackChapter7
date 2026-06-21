@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sportsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c2d12" />
+      <stop offset="100%" stop-color="#4c1d95" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#sportsGrad)" />
+  <!-- Bicycle Wheel / Basketball combo graphic -->
+  <circle cx="200" cy="140" r="70" fill="none" stroke="url(#glowGrad)" stroke-width="5" filter="url(#glow)" />
+  <!-- Ribs inside ball/wheel -->
+  <path d="M 200,70 A 70,70 0 0,0 200,210" fill="none" stroke="url(#glowGrad)" stroke-width="2.5" opacity="0.6" />
+  <path d="M 200,70 A 70,70 0 0,1 200,210" fill="none" stroke="url(#glowGrad)" stroke-width="2.5" opacity="0.6" />
+  <line x1="130" y1="140" x2="270" y2="140" stroke="url(#glowGrad)" stroke-width="2.5" opacity="0.6" />
+  <line x1="200" y1="70" x2="200" y2="210" stroke="url(#glowGrad)" stroke-width="2.5" opacity="0.6" />
+  <!-- Running wings / speed lines -->
+  <path d="M 90,120 L 110,130 L 95,140 L 115,150 L 90,160" fill="none" stroke="#f97316" stroke-width="3" />
+  <path d="M 310,120 L 290,130 L 305,140 L 285,150 L 310,160" fill="none" stroke="#8b5cf6" stroke-width="3" />
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-weight="bold" font-size="20" fill="#e2e8f0" text-anchor="middle">SPORTS &amp; OUTDOORS</text>
+</svg>

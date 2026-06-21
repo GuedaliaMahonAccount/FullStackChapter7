@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="toysGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#581c87" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#toysGrad)" />
+  <!-- Puzzle / Game controller / Bear design (Let's make a Gamepad) -->
+  <rect x="120" y="100" width="160" height="90" rx="45" fill="url(#toysGrad)" stroke="url(#glowGrad)" stroke-width="5" filter="url(#glow)" />
+  <!-- Controller D-Pad -->
+  <path d="M 170,125 H 180 V 135 H 190 V 145 H 180 V 155 H 170 V 145 H 160 V 135 H 170 Z" fill="#a855f7" />
+  <!-- Controller Buttons -->
+  <circle cx="230" cy="135" r="7" fill="#f43f5e" />
+  <circle cx="245" cy="150" r="7" fill="#f43f5e" />
+  <!-- Controller Joystick -->
+  <circle cx="190" cy="165" r="10" fill="#e2e8f0" opacity="0.8" />
+  <circle cx="210" cy="165" r="10" fill="#e2e8f0" opacity="0.8" />
+  <!-- Sparkles -->
+  <path d="M 200,60 L 203,70 L 213,73 L 203,76 L 200,86 L 197,76 L 187,73 L 197,70 Z" fill="#f43f5e" />
+  <text x="200" y="270" font-family="system-ui, sans-serif" font-weight="bold" font-size="20" fill="#e2e8f0" text-anchor="middle">TOYS &amp; HOBBIES</text>
+</svg>
