@@ -7,7 +7,7 @@ const EventLogSchema = new mongoose.Schema({
     index: true
   },
   user_id: {
-    type: Number, // Reference to MySQL user ID (nullable if guest/anonymous action)
+    type: String, // Reference to MySQL user ID (nullable if guest/anonymous action)
     index: true
   },
   details: {

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-import { SocketProvider } from './context/SocketContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
@@ -11,12 +10,12 @@ import CartDrawer from './components/common/CartDrawer';
 // Pages
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
-import SellProduct from './pages/SellProduct';
 import Cart from './pages/Cart';
 import OrderStatus from './pages/OrderStatus';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
+import SellerDashboard from './pages/SellerDashboard';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -24,7 +23,6 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <SocketProvider>
           <Router>
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
               <Navbar onToggleCart={() => setIsCartOpen(!isCartOpen)} />
@@ -38,10 +36,10 @@ function App() {
                   
                   {/* Protected Routes */}
                   <Route 
-                    path="/sell" 
+                    path="/dashboard" 
                     element={
                       <ProtectedRoute>
-                        <SellProduct />
+                        <SellerDashboard />
                       </ProtectedRoute>
                     } 
                   />
@@ -80,7 +78,6 @@ function App() {
               />
             </div>
           </Router>
-        </SocketProvider>
       </CartProvider>
     </AuthProvider>
   );

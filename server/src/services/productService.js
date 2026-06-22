@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Product, User, Category } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
 
-const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude }, req = null) => {
+const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude, address, currency }, req = null) => {
   // Ensure category exists
   const category = await Category.findByPk(categoryId);
   if (!category) {
@@ -18,7 +18,9 @@ const createProduct = async ({ title, description, price, imageUrl, stockQuantit
     categoryId,
     sellerId,
     latitude: latitude ? parseFloat(latitude) : null,
-    longitude: longitude ? parseFloat(longitude) : null
+    longitude: longitude ? parseFloat(longitude) : null,
+    address: address || null,
+    currency: currency || 'USD'
   });
 
   // Log product listing event
@@ -110,9 +112,63 @@ const deleteProduct = async (productId, sellerId, userRole, req = null) => {
   return { success: true, message: 'Product listing deleted successfully.' };
 };
 
+const getProductsBySellerId = async (sellerId) => {
+  return await Product.findAll({
+    where: { sellerId },
+    include: [
+      { model: Category, as: 'category', attributes: ['id', 'name'] }
+    ],
+    order: [['createdAt', 'DESC']]
+  });
+};
+
+const updateProduct = async (productId, sellerId, userRole, updates, req = null) => {
+  const product = await Product.findByPk(productId);
+  if (!product) {
+    throw { statusCode: 404, message: 'Product listing not found.' };
+  }
+
+  // Verify ownership (unless Admin)
+  if (userRole !== 'admin' && product.sellerId !== sellerId) {
+    throw { statusCode: 403, message: 'Unauthorized: You are not the owner of this product listing.' };
+  }
+
+  const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency } = updates;
+
+  if (categoryId) {
+    const category = await Category.findByPk(categoryId);
+    if (!category) throw { statusCode: 400, message: 'Invalid category selection.' };
+  }
+
+  await product.update({
+    ...(title !== undefined && { title }),
+    ...(description !== undefined && { description }),
+    ...(price !== undefined && { price: parseFloat(price) }),
+    ...(stockQuantity !== undefined && { stockQuantity: parseInt(stockQuantity, 10) }),
+    ...(categoryId !== undefined && { categoryId }),
+    ...(latitude !== undefined && { latitude: latitude ? parseFloat(latitude) : null }),
+    ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),
+    ...(address !== undefined && { address: address || null }),
+    ...(currency !== undefined && { currency }),
+  });
+
+  await logEvent({
+    eventType: 'PRODUCT_UPDATED',
+    userId: sellerId,
+    details: { productId, updates },
+    req
+  });
+
+  return product.reload({
+    include: [{ model: Category, as: 'category', attributes: ['id', 'name'] }]
+  });
+};
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
-  deleteProduct
+  deleteProduct,
+  getProductsBySellerId,
+  updateProduct
 };

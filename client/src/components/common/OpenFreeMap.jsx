@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { getImageUrl, formatPrice } from '../../utils/format';
 
 export const OpenFreeMap = ({ 
   products = [], 
@@ -97,12 +98,12 @@ export const OpenFreeMap = ({
             ${product.title}
           </div>
           <div style="margin-bottom: 6px;">
-            <img src="${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${product.imageUrl}" 
+            <img src="${getImageUrl(product.imageUrl)}" 
                  style="width: 100%; height: 75px; object-fit: cover; border-radius: 4px;"
                  alt="${product.title}" />
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #14b8a6; font-weight: 700;">$${parseFloat(product.price).toFixed(2)}</span>
+            <span style="color: #14b8a6; font-weight: 700;">${formatPrice(product.price, product.currency)}</span>
             <a href="/products/${product.id}" 
                style="background: #6366f1; color: #fff; text-decoration: none; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">
                View Details

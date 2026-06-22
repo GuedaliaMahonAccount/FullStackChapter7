@@ -1,7 +1,5 @@
 const { sequelize, Order, OrderItem, Product, User } = require('../models/sql');
 const OrderTracking = require('../models/nosql/OrderTracking');
-const { createNotification } = require('./notificationService');
-const { emitOrderStatusUpdate } = require('../config/socket');
 const { logEvent } = require('../utils/logger');
 const mongoose = require('mongoose');
 
@@ -74,24 +72,6 @@ const placeOrder = async ({ buyerId, shippingAddress, items }, req = null) => {
       } catch (err) {
         console.error('Error initializing MongoDB order tracking:', err.message);
       }
-    }
-
-    // 5. Send notifications (asynchronous)
-    await createNotification({
-      userId: buyerId,
-      title: 'Order Placed successfully',
-      message: `Your order #${order.id} for $${totalPrice.toFixed(2)} has been received and is being processed.`,
-      type: 'order_status'
-    });
-
-    // Notify sellers
-    for (const item of itemsToCreate) {
-      await createNotification({
-        userId: item.sellerId,
-        title: 'New Sale!',
-        message: `Your product "${item.productTitle}" has been purchased (Quantity: ${item.quantity}).`,
-        type: 'payment_alert'
-      });
     }
 
     // 6. Log order placement event
@@ -228,14 +208,6 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
     }
   }
 
-  // Notify buyer of status update
-  await createNotification({
-    userId: order.buyerId,
-    title: `Order #${orderId} Update`,
-    message: `Your order status has been updated to "${status}". Notes: ${notes || 'None'}`,
-    type: 'order_status'
-  });
-
   const updatePayload = {
     orderId,
     status,
@@ -243,9 +215,6 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
     carrier_details: trackingDoc ? trackingDoc.carrier_details : { carrier_name: carrierName, tracking_number: trackingNumber },
     changed_at: new Date()
   };
-
-  // Broadcast WebSocket update in real time
-  emitOrderStatusUpdate(orderId, updatePayload);
 
   // Log status change
   await logEvent({
@@ -258,9 +227,68 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
   return updatePayload;
 };
 
+const getSellerOrders = async (sellerId) => {
+  const orderItems = await OrderItem.findAll({
+    include: [
+      {
+        model: Product,
+        as: 'product',
+        where: { sellerId }
+      },
+      {
+        model: Order,
+        as: 'order',
+        include: [
+          { model: User, as: 'buyer', attributes: ['id', 'fullName', 'email'] }
+        ]
+      }
+    ]
+  });
+
+  const ordersMap = new Map();
+  for (const item of orderItems) {
+    const order = item.order;
+    if (!order) continue;
+    if (!ordersMap.has(order.id)) {
+      let currentStatus = 'Pending';
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const tracking = await OrderTracking.findOne({ order_id: order.id }, { current_status: 1 });
+          if (tracking) currentStatus = tracking.current_status;
+        } catch (err) {
+          // ignore
+        }
+      }
+      ordersMap.set(order.id, {
+        id: order.id,
+        totalPrice: order.totalPrice,
+        paymentStatus: order.paymentStatus,
+        createdAt: order.createdAt,
+        buyer: order.buyer,
+        status: currentStatus,
+        items: []
+      });
+    }
+
+    ordersMap.get(order.id).items.push({
+      id: item.id,
+      quantity: item.quantity,
+      priceAtPurchase: item.priceAtPurchase,
+      product: {
+        id: item.product.id,
+        title: item.product.title,
+        imageUrl: item.product.imageUrl
+      }
+    });
+  }
+
+  return Array.from(ordersMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
 module.exports = {
   placeOrder,
   getOrderDetails,
   getBuyerOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  getSellerOrders
 };

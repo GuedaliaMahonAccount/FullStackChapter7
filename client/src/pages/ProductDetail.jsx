@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
-import { ShoppingCart, User, ChevronLeft, MapPin, Box, CheckCircle } from 'lucide-react';
+import { ShoppingCart, User, ChevronLeft, MapPin, Box, CheckCircle, Lock, Globe, Languages, RefreshCw } from 'lucide-react';
+import { getImageUrl, formatPrice } from '../utils/format';
 
 export const ProductDetail = () => {
   const { id }       = useParams();
@@ -13,8 +15,107 @@ export const ProductDetail = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [added, setAdded]       = useState(false);
 
+  // MyMemory translation states
+  const [translatedDesc, setTranslatedDesc] = useState('');
+  const [isTranslating, setIsTranslating]   = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+
+  // Frankfurter currency conversion states
+  const [ilsConvertedPrice, setIlsConvertedPrice] = useState('');
+  const [isIlsConverting, setIsIlsConverting]     = useState(false);
+  
+  // Custom converter states
+  const [customCurrency, setCustomCurrency]       = useState('ILS');
+  const [customConvertedPrice, setCustomConvertedPrice] = useState(null);
+  const [isCustomConverting, setIsCustomConverting] = useState(false);
+
   const { get }      = useFetch();
   const { addToCart } = useCart();
+  const { user }     = useAuth();
+
+  // Fetch Frankfurter conversion to ILS automatically
+  useEffect(() => {
+    if (!product) return;
+    if (product.currency === 'ILS') {
+      Promise.resolve().then(() => setIlsConvertedPrice(''));
+      return;
+    }
+    
+    const fetchIlsConversion = async () => {
+      setIsIlsConverting(true);
+      try {
+        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=ILS`);
+        if (result.success && result.data && result.data.rates && result.data.rates.ILS) {
+          setIlsConvertedPrice(formatPrice(result.data.rates.ILS, 'ILS'));
+        }
+      } catch (err) {
+        console.error('Error converting product price to ILS:', err);
+      } finally {
+        setIsIlsConverting(false);
+      }
+    };
+    fetchIlsConversion();
+  }, [product]);
+
+  // Custom currency conversion handler
+  const handleCustomConvert = (targetCurr) => {
+    setCustomCurrency(targetCurr);
+  };
+
+  // Fetch custom currency conversion automatically when product or customCurrency changes
+  useEffect(() => {
+    if (!product) return;
+    
+    if (product.currency === customCurrency) {
+      Promise.resolve().then(() => setCustomConvertedPrice(formatPrice(product.price, product.currency)));
+      return;
+    }
+
+    const fetchCustomConversion = async () => {
+      setIsCustomConverting(true);
+      try {
+        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=${customCurrency}`);
+        if (result.success && result.data && result.data.rates && result.data.rates[customCurrency]) {
+          setCustomConvertedPrice(formatPrice(result.data.rates[customCurrency], customCurrency));
+        }
+      } catch (err) {
+        console.error(`Error converting price to ${customCurrency}:`, err);
+      } finally {
+        setIsCustomConverting(false);
+      }
+    };
+    
+    fetchCustomConversion();
+  }, [product, customCurrency]);
+
+  // MyMemory translation handler
+  const handleTranslateDescription = async () => {
+    if (translatedDesc) {
+      setShowTranslation(!showTranslation);
+      return;
+    }
+    
+    setIsTranslating(true);
+    try {
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(product.description)}&langpair=auto|he`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+          setTranslatedDesc(data.responseData.translatedText);
+          setShowTranslation(true);
+        } else {
+          alert('Could not translate text. Please try again.');
+        }
+      } else {
+        alert('Translation service error. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error translating text:', err);
+      alert('Error translating description.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -89,7 +190,7 @@ export const ProductDetail = () => {
             style={{ height: '400px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 0 }}
           >
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${product.imageUrl}`}
+              src={getImageUrl(product.imageUrl)}
               alt={product.title}
               style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
               onMouseEnter={(e) => e.target.style.transform = 'scale(1.03)'}
@@ -99,11 +200,22 @@ export const ProductDetail = () => {
 
           {/* Description */}
           <div className="glass-panel-static" style={{ padding: '28px', borderRadius: 'var(--radius-md)' }}>
-            <h2 style={{ fontSize: '1.15rem', marginBottom: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-              Product Description
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h2 style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', fontWeight: 600, margin: 0 }}>
+                Product Description
+              </h2>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ gap: '6px', fontSize: '0.8rem', padding: '4px 8px', height: '32px' }}
+                onClick={handleTranslateDescription}
+                disabled={isTranslating}
+              >
+                <Languages size={15} />
+                {isTranslating ? 'Translating...' : showTranslation ? 'Show Original' : 'Translate to Hebrew'}
+              </button>
+            </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-              {product.description}
+              {showTranslation ? translatedDesc : product.description}
             </p>
           </div>
         </div>
@@ -123,10 +235,15 @@ export const ProductDetail = () => {
               {product.title}
             </h1>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--secondary)', fontFamily: 'var(--font-heading)' }}>
-                ${parseFloat(product.price).toFixed(2)}
+                {formatPrice(product.price, product.currency)}
               </span>
+              {product.currency !== 'ILS' && (
+                <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
+                  {isIlsConverting ? '(calculating...)' : ilsConvertedPrice ? `(≈ ${ilsConvertedPrice})` : ''}
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -136,21 +253,76 @@ export const ProductDetail = () => {
               </span>
             </div>
 
+            {/* Interactive Currency Converter Panel */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Globe size={13} style={{ color: 'var(--primary-light)' }} /> Currency Converter (Frankfurter)
+              </span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select
+                  className="form-input"
+                  style={{ height: '32px', fontSize: '0.8rem', padding: '4px 8px', flex: 1 }}
+                  value={customCurrency}
+                  onChange={(e) => handleCustomConvert(e.target.value)}
+                >
+                  <option value="ILS">Convert to ILS (₪)</option>
+                  <option value="USD">Convert to USD ($)</option>
+                  <option value="EUR">Convert to EUR (€)</option>
+                  <option value="GBP">Convert to GBP (£)</option>
+                  <option value="JPY">Convert to JPY (¥)</option>
+                  <option value="CAD">Convert to CAD (C$)</option>
+                </select>
+                <div style={{ flex: 1.2, fontSize: '0.85rem', fontWeight: 700, textAlign: 'right' }}>
+                  {isCustomConverting ? (
+                    <span style={{ color: 'var(--text-muted)' }}><RefreshCw size={12} className="spinner" style={{ display: 'inline', marginRight: '4px' }} /> Calculating...</span>
+                  ) : customConvertedPrice ? (
+                    <span className="text-gradient" style={{ fontSize: '1rem' }}>{customConvertedPrice}</span>
+                  ) : (
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Select currency</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="divider" style={{ margin: '4px 0' }} />
 
-            <button
-              id="product-add-to-cart-btn"
-              onClick={handleAddToCart}
-              className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
-              style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
-              disabled={product.stockQuantity === 0}
-            >
-              {added ? (
-                <><CheckCircle size={18} /> Added to Cart!</>
-              ) : (
-                <><ShoppingCart size={18} /> Add to Cart</>
-              )}
-            </button>
+          {(() => {
+              const isOwnProduct = user && product.seller && user.id === product.seller.id;
+              if (isOwnProduct) {
+                return (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '14px 20px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(99,102,241,0.08)',
+                    border: '1px solid rgba(99,102,241,0.25)',
+                    color: 'var(--primary-light)',
+                    fontSize: '0.9rem',
+                    fontWeight: 600
+                  }}>
+                    <Lock size={16} />
+                    This is your listing — you can't buy your own product.
+                  </div>
+                );
+              }
+              return (
+                <button
+                  id="product-add-to-cart-btn"
+                  onClick={handleAddToCart}
+                  className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
+                  style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
+                  disabled={product.stockQuantity === 0}
+                >
+                  {added ? (
+                    <><CheckCircle size={18} /> Added to Cart!</>
+                  ) : (
+                    <><ShoppingCart size={18} /> Add to Cart</>
+                  )}
+                </button>
+              );
+            })()}
 
             {product.stockQuantity === 0 && (
               <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--status-cancelled)' }}>
@@ -187,6 +359,11 @@ export const ProductDetail = () => {
                 <MapPin size={16} style={{ color: 'var(--primary)' }} />
                 Sale Location
               </h3>
+              {product.address && (
+                <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginTop: '-4px' }}>
+                  <strong>Address:</strong> {product.address}
+                </p>
+              )}
               <div
                 className="glass-panel-static"
                 style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden', padding: 0 }}

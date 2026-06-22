@@ -65,7 +65,7 @@ const isOwnerOrAdmin = (getOwnerIdFn) => {
       }
       
       const ownerId = await getOwnerIdFn(req);
-      if (req.user.id === parseInt(ownerId, 10)) {
+      if (String(req.user.id) === String(ownerId)) {
         return next();
       }
 

@@ -8,7 +8,6 @@ require('dotenv').config();
 const { initDatabaseConnection } = require('./config/database');
 const { initializeDatabase } = require('./utils/dbInit');
 const connectMongo = require('./config/mongo');
-const { initSocket } = require('./config/socket');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -57,15 +56,11 @@ const startServer = async () => {
     // B. Sync schemas and seed databases
     await initializeDatabase();
 
-    // C. Initialize WebSockets (Socket.io)
-    initSocket(server);
-
     // D. Start listening on the port
     server.listen(PORT, () => {
       console.log(`===============================================`);
       console.log(`  C2C MARKETPLACE BACKEND SERVER IS RUNNING`);
       console.log(`  Local Address: http://localhost:${PORT}`);
-      console.log(`  WebSocket Server: Enabled & Listening`);
       console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`===============================================`);
     });

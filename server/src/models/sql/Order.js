@@ -1,14 +1,15 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../config/database');
+const mongoose = require('mongoose');
 
 const Order = sequelize.define('Order', {
   id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
+    type: DataTypes.STRING(24),
+    primaryKey: true,
+    defaultValue: () => new mongoose.Types.ObjectId().toString()
   },
   buyerId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(24),
     allowNull: false,
     field: 'buyer_id',
     references: {

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { getImageUrl, formatPrice } from '../../utils/format';
 
 export const CartDrawer = ({ isOpen, onClose }) => {
   const { cart, updateQuantity, removeFromCart, getCartTotal } = useCart();
@@ -88,7 +89,7 @@ export const CartDrawer = ({ isOpen, onClose }) => {
               >
                 {/* Thumbnail */}
                 <img
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${item.imageUrl}`}
+                  src={getImageUrl(item.imageUrl)}
                   alt={item.title}
                   style={{ width: '68px', height: '68px', objectFit: 'cover', borderRadius: 'var(--radius-xs)', flexShrink: 0 }}
                 />
@@ -99,7 +100,7 @@ export const CartDrawer = ({ isOpen, onClose }) => {
                     {item.title}
                   </h4>
                   <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>
-                    ${parseFloat(item.price).toFixed(2)}
+                    {formatPrice(item.price, item.currency)}
                   </span>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -146,7 +147,17 @@ export const CartDrawer = ({ isOpen, onClose }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Subtotal</span>
               <span style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'var(--font-heading)' }}>
-                ${getCartTotal().toFixed(2)}
+                {(() => {
+                  if (cart.length === 0) return '$0.00';
+                  const firstCurrency = cart[0].currency || 'USD';
+                  const allSame = cart.every(item => (item.currency || 'USD') === firstCurrency);
+                  const total = getCartTotal();
+                  if (allSame) {
+                    return formatPrice(total, firstCurrency);
+                  } else {
+                    return formatPrice(total, 'USD') + ' (USD)';
+                  }
+                })()}
               </span>
             </div>
             <button

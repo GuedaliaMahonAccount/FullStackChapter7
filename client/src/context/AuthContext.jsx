@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('c2c_token');
     setToken(null);
     setUser(null);
+    window.dispatchEvent(new Event('auth-logout'));
   };
 
   return (

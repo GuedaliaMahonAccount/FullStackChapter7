@@ -13,7 +13,7 @@ const updateStatus = async (req, res, next) => {
     }
 
     const result = await orderService.updateOrderStatus({
-      orderId: parseInt(id, 10),
+      orderId: id,
       status,
       notes,
       carrierName,

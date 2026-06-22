@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const NotificationSchema = new mongoose.Schema({
   user_id: {
-    type: Number, // Reference to MySQL user ID
+    type: String, // Reference to MySQL user ID
     required: true,
     index: true
   },

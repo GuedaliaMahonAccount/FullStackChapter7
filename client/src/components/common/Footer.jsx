@@ -4,7 +4,7 @@ import { Compass } from 'lucide-react';
 
 export const Footer = () => {
   const year = new Date().getFullYear();
-  const stack = ['React', 'Express', 'MySQL', 'MongoDB', 'Socket.io', 'MapLibre'];
+  const stack = ['React', 'Express', 'MySQL', 'MongoDB', 'MapLibre'];
 
   return (
     <footer className="site-footer">

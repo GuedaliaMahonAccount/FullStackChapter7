@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import {
-  ShoppingCart, LogOut, PlusCircle, Shield,
-  Compass, ShoppingBag, Menu, X
+  ShoppingCart, LogOut, Shield,
+  Compass, ShoppingBag, Menu, X, LayoutDashboard
 } from 'lucide-react';
 
 export const Navbar = ({ onToggleCart }) => {
@@ -59,11 +59,11 @@ export const Navbar = ({ onToggleCart }) => {
             {user && (
               <>
                 <Link
-                  to="/sell"
-                  className={`nav-link${isActive('/sell') ? ' active' : ''}`}
+                  to="/dashboard"
+                  className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}
                 >
-                  <PlusCircle size={16} />
-                  Sell
+                  <LayoutDashboard size={16} />
+                  My Shop
                 </Link>
                 <Link
                   to="/orders"
@@ -162,8 +162,8 @@ export const Navbar = ({ onToggleCart }) => {
 
         {user && (
           <>
-            <Link to="/sell" className={`nav-link${isActive('/sell') ? ' active' : ''}`}>
-              <PlusCircle size={18} /> Sell Item
+            <Link to="/dashboard" className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}>
+              <LayoutDashboard size={18} /> My Shop
             </Link>
             <Link to="/orders" className={`nav-link${isActive('/orders') ? ' active' : ''}`}>
               <ShoppingBag size={18} /> My Orders

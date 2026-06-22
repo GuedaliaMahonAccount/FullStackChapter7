@@ -3,6 +3,7 @@ import { useFetch } from '../hooks/useFetch';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
 import { Search, MapPin, Layers, ShoppingCart, ArrowRight, TrendingUp } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getImageUrl, formatPrice } from '../utils/format';
 
 export const Home = () => {
   const [products, setProducts] = useState([]);
@@ -10,9 +11,25 @@ export const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [exchangeRates, setExchangeRates] = useState(null);
 
   const { get } = useFetch();
   const { addToCart } = useCart();
+
+  // Fetch Frankfurter rates on mount
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const result = await get('/currency/rates?from=ILS');
+        if (result.success) {
+          setExchangeRates(result.data);
+        }
+      } catch (err) {
+        console.error('Error fetching Frankfurter exchange rates:', err);
+      }
+    };
+    fetchRates();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,11 +160,16 @@ export const Home = () => {
                   {/* Image */}
                   <div className="product-card-img">
                     <img
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${product.imageUrl}`}
+                      src={getImageUrl(product.imageUrl)}
                       alt={product.title}
                     />
-                    <div className="product-card-price-badge">
-                      ${parseFloat(product.price).toFixed(2)}
+                    <div className="product-card-price-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', padding: '6px 10px', height: 'auto' }}>
+                      <div style={{ fontWeight: 800 }}>{formatPrice(product.price, product.currency)}</div>
+                      {product.currency !== 'ILS' && exchangeRates && exchangeRates.rates?.[product.currency] && (
+                        <div style={{ fontSize: '0.68rem', opacity: 0.85, fontWeight: 500 }}>
+                          ≈ {formatPrice(product.price / exchangeRates.rates[product.currency], 'ILS')}
+                        </div>
+                      )}
                     </div>
                   </div>
 

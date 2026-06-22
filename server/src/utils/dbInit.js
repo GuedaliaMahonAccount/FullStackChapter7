@@ -431,6 +431,10 @@ const seedDatabase = async () => {
     const eventCount = await EventLog.countDocuments();
     if (eventCount === 0) {
       console.log('Seeding mock event logs in MongoDB...');
+
+      const seededOrders = await Order.findAll({ limit: 1 });
+      const seededOrderId = seededOrders.length > 0 ? seededOrders[0].id : 'unknown';
+
       await EventLog.create([
         {
           event_type: 'USER_REGISTER',
@@ -460,12 +464,12 @@ const seedDatabase = async () => {
         {
           event_type: 'ORDER_STATUS_CHANGE',
           user_id: usersMap['admin@c2c.com'],
-          details: { orderId: 1, previousStatus: 'Pending', newStatus: 'Ready' }
+          details: { orderId: seededOrderId, previousStatus: 'Pending', newStatus: 'Ready' }
         },
         {
           event_type: 'ORDER_STATUS_CHANGE',
           user_id: usersMap['admin@c2c.com'],
-          details: { orderId: 1, previousStatus: 'Ready', newStatus: 'Shipped' }
+          details: { orderId: seededOrderId, previousStatus: 'Ready', newStatus: 'Shipped' }
         }
       ]);
       console.log('Event logs seeded in MongoDB.');
@@ -483,8 +487,12 @@ const initializeDatabase = async () => {
     await sequelize.sync({ alter: true });
     console.log('MySQL schemas synchronized successfully.');
     
-    // Seed records
-    await seedDatabase();
+    // Seed records only if SEED_ON_START is explicitly set to 'true'
+    if (process.env.SEED_ON_START === 'true') {
+      await seedDatabase();
+    } else {
+      console.log('Skipping automatic database seeding (SEED_ON_START is not "true").');
+    }
   } catch (error) {
     console.error('Failed to sync MySQL schemas:', error);
     throw error;

@@ -18,7 +18,7 @@ const StatusHistorySchema = new mongoose.Schema({
 
 const OrderTrackingSchema = new mongoose.Schema({
   order_id: {
-    type: Number, // Maps to MySQL Order ID
+    type: String, // Maps to MySQL Order ID
     required: true,
     unique: true,
     index: true

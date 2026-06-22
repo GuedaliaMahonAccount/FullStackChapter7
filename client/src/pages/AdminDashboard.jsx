@@ -82,7 +82,7 @@ export const AdminDashboard = () => {
       });
 
       if (res.success) {
-        setMessage(`Order #${selectedOrder.id} status updated to "${status}" successfully! Sockets broadcast sent.`);
+        setMessage(`Order #${selectedOrder.id} status updated to "${status}" successfully!`);
         setNotes('');
         setCarrierName('');
         setTrackingNumber('');
@@ -115,7 +115,7 @@ export const AdminDashboard = () => {
             Admin <span className="text-gradient">Portal</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '2px' }}>
-            Simulate tracking updates and broadcast real-time events to buyers
+            Simulate tracking updates and save changes
           </p>
         </div>
       </div>
@@ -263,8 +263,8 @@ export const AdminDashboard = () => {
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
-                      <><span className="spinner spinner-sm" style={{ borderTopColor: '#fff' }} /> Broadcasting…</>
-                    ) : 'Update Status & Emit Broadcast'}
+                      <><span className="spinner spinner-sm" style={{ borderTopColor: '#fff' }} /> Saving…</>
+                    ) : 'Update Status & Save'}
                   </button>
 
                 </form>

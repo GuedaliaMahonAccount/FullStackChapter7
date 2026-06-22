@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
 import { Compass, Mail, Lock, ShieldAlert, ArrowRight } from 'lucide-react';
@@ -13,9 +13,8 @@ export const Login = () => {
   const { login }    = useAuth();
   const { post }     = useFetch();
   const navigate     = useNavigate();
-  const location     = useLocation();
 
-  const redirectPath = location.state?.from?.pathname || '/';
+  const redirectPath = '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -27,18 +27,21 @@ const getProductDetail = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const { title, description, price, stockQuantity, categoryId, latitude, longitude } = req.body;
+    const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, imageUrl: bodyImageUrl } = req.body;
     
-    // Check if image file is uploaded
-    if (!req.file) {
+    // Check if image file is uploaded or remote imageUrl is provided
+    let imageUrl = '';
+    if (req.file) {
+      // Store relative path. The client will prefix with server URL.
+      imageUrl = `/uploads/${req.file.filename}`;
+    } else if (bodyImageUrl && (bodyImageUrl.startsWith('http://') || bodyImageUrl.startsWith('https://'))) {
+      imageUrl = bodyImageUrl;
+    } else {
       return res.status(400).json({
         success: false,
-        message: 'Validation Error: Product image file is required.'
+        message: 'Validation Error: Product image file or a valid remote image URL is required.'
       });
     }
-
-    // Store relative path. The client will prefix with server URL.
-    const imageUrl = `/uploads/${req.file.filename}`;
 
     const product = await productService.createProduct({
       title,
@@ -46,10 +49,12 @@ const createProduct = async (req, res, next) => {
       price: parseFloat(price),
       imageUrl,
       stockQuantity: stockQuantity ? parseInt(stockQuantity, 10) : 1,
-      categoryId: parseInt(categoryId, 10),
+      categoryId,
       sellerId: req.user.id,
       latitude: latitude ? parseFloat(latitude) : null,
-      longitude: longitude ? parseFloat(longitude) : null
+      longitude: longitude ? parseFloat(longitude) : null,
+      address: address || null,
+      currency: currency || 'USD'
     }, req);
 
     res.status(201).json({
@@ -73,9 +78,43 @@ const deleteProductListing = async (req, res, next) => {
     next(error);
   }
 };
+
+const updateProductListing = async (req, res, next) => {
+  try {
+    const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency } = req.body;
+    const updated = await productService.updateProduct(
+      req.params.id,
+      req.user.id,
+      req.user.role,
+      { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency },
+      req
+    );
+    res.status(200).json({
+      success: true,
+      message: 'Product updated successfully.',
+      data: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+const getMyProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getProductsBySellerId(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProducts,
   getProductDetail,
   createProduct,
-  deleteProductListing
+  deleteProductListing,
+  updateProductListing,
+  getMyProducts
 };

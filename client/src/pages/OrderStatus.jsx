@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFetch } from '../hooks/useFetch';
-import { useSocket } from '../context/SocketContext';
-import { ShoppingBag, Truck, MapPin, Clock, CheckCircle, Package } from 'lucide-react';
+import { ShoppingBag, Truck, MapPin, Clock, CheckCircle, Package, RefreshCw } from 'lucide-react';
+import { getImageUrl, formatPrice } from '../utils/format';
 
 const STATUS_STEPS = ['Pending', 'Ready', 'Shipped', 'Collected'];
 
@@ -19,69 +19,50 @@ export const OrderStatus = () => {
   const [loading, setLoading]         = useState(true);
 
   const { get }    = useFetch();
-  const { socket } = useSocket();
+
+  const fetchOrders = async () => {
+    try {
+      const res = await get('/orders/buyer');
+      if (res.success) {
+        setOrders(res.data);
+        if (res.data.length > 0) setSelectedOrder(res.data[0].id);
+      }
+    } catch (err) {
+      console.error('Error fetching buyer orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDetails = async () => {
+    if (!selectedOrder) return;
+    try {
+      const res = await get(`/orders/${selectedOrder}`);
+      if (res.success) setOrderDetails(res.data);
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await fetchDetails();
+    try {
+      const res = await get('/orders/buyer');
+      if (res.success) {
+        setOrders(res.data);
+      }
+    } catch (err) {
+      console.error('Error refreshing buyer orders:', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await get('/orders/buyer');
-        if (res.success) {
-          setOrders(res.data);
-          if (res.data.length > 0) setSelectedOrder(res.data[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching buyer orders:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrders();
   }, []);
 
   useEffect(() => {
-    if (!selectedOrder) return;
-
-    const fetchDetails = async () => {
-      try {
-        const res = await get(`/orders/${selectedOrder}`);
-        if (res.success) setOrderDetails(res.data);
-      } catch (err) {
-        console.error('Error fetching order details:', err);
-      }
-    };
     fetchDetails();
-
-    if (socket) {
-      socket.emit('join_order_room', selectedOrder);
-
-      socket.on('order_status_updated', (data) => {
-        if (data.orderId === selectedOrder) {
-          setOrderDetails((prev) => {
-            if (!prev) return null;
-            const isDuplicate = prev.tracking.status_history.some(
-              h => h.status === data.status && new Date(h.changed_at).getTime() === new Date(data.changed_at).getTime()
-            );
-            const newHistory = isDuplicate
-              ? prev.tracking.status_history
-              : [...prev.tracking.status_history, { status: data.status, changed_at: data.changed_at, notes: data.notes }];
-
-            return {
-              ...prev,
-              tracking: { ...prev.tracking, current_status: data.status, carrier_details: data.carrier_details, status_history: newHistory }
-            };
-          });
-          setOrders((prev) => prev.map((o) => o.id === selectedOrder ? { ...o, status: data.status } : o));
-        }
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.emit('leave_order_room', selectedOrder);
-        socket.off('order_status_updated');
-      }
-    };
-  }, [selectedOrder, socket]);
+  }, [selectedOrder]);
 
   const currentStepIdx = orderDetails
     ? STATUS_STEPS.indexOf(orderDetails.tracking?.current_status || 'Pending')
@@ -107,17 +88,26 @@ export const OrderStatus = () => {
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Header */}
-      <div>
-        <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 900 }}>
-          Order <span className="text-gradient">Tracking</span>
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-          Real-time updates powered by WebSockets
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 900 }}>
+            Order <span className="text-gradient">Tracking</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
+            Click refresh to check for latest updates
+          </p>
+        </div>
+        <button 
+          className="btn btn-secondary" 
+          onClick={handleRefresh} 
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '0.88rem', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}
+        >
+          <RefreshCw size={14} /> Refresh Status
+        </button>
       </div>
 
       {/* Split Layout: orders list + detail */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', alignItems: 'start' }} className="split-layout">
+      <div className="sidebar-layout">
 
         {/* Left: Orders List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -150,7 +140,7 @@ export const OrderStatus = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Order #{o.id}</span>
                   <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>
-                    ${parseFloat(o.totalPrice).toFixed(2)}
+                    {formatPrice(o.totalPrice, o.currency || 'USD')}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -235,7 +225,7 @@ export const OrderStatus = () => {
               </div>
 
               {/* Content Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }} className="split-layout">
+              <div className="details-grid">
 
                 {/* Items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -249,7 +239,7 @@ export const OrderStatus = () => {
                       style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.025)', padding: '10px 12px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)' }}
                     >
                       <img
-                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${item.product?.imageUrl}`}
+                        src={getImageUrl(item.product?.imageUrl)}
                         alt={item.product?.title}
                         style={{ width: 46, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
                       />
@@ -258,7 +248,7 @@ export const OrderStatus = () => {
                           {item.product?.title}
                         </h4>
                         <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-                          {item.quantity}× ${parseFloat(item.priceAtPurchase).toFixed(2)}
+                          {item.quantity}× {formatPrice(item.priceAtPurchase, item.product?.currency || 'USD')}
                         </span>
                       </div>
                     </div>

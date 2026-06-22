@@ -27,14 +27,15 @@ export const useFetch = () => {
     try {
       const response = await fetch(url, config);
       
-      // Auto logout if token expires (401/403 status)
-      if (response.status === 401 || response.status === 403) {
+      // Auto logout only if token is invalid/expired (401)
+      // 403 = authenticated but forbidden — do NOT logout for that
+      if (response.status === 401) {
         logout();
         throw new Error('Session expired. Please log in again.');
       }
 
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.message || 'Something went wrong. Please try again.');
       }
@@ -60,5 +61,10 @@ export const useFetch = () => {
     body: JSON.stringify(body)
   });
 
-  return { get, post, del, patch };
+  const put = (endpoint, body) => customFetch(endpoint, {
+    method: 'PUT',
+    body: JSON.stringify(body)
+  });
+
+  return { get, post, del, patch, put };
 };
