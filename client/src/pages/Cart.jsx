@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { Trash2, ShoppingBag, CreditCard, MapPin, CheckCircle, Plus, Minus, ArrowRight } from 'lucide-react';
+import { Trash2, ShoppingBag, CreditCard, MapPin, CheckCircle, Plus, Minus, ArrowRight, Search } from 'lucide-react';
 import { getImageUrl, formatPrice } from '../utils/format';
 
 export const Cart = () => {
   const { cart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
-  const { post }     = useFetch();
-  const navigate     = useNavigate();
+  const { post } = useFetch();
+  const navigate = useNavigate();
 
   const SAVED_CARD_KEY = user?.id ? `c2c_saved_card_${user.id}` : 'c2c_saved_card';
   const SAVED_ADDRESS_KEY = user?.id ? `c2c_saved_address_${user.id}` : 'c2c_saved_address';
@@ -26,6 +26,10 @@ export const Cart = () => {
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [errorMsg, setErrorMsg]               = useState('');
   const [purchaseSuccess, setPurchaseSuccess] = useState(null);
+
+  // Photon autocomplete states
+  const [addressSuggestions, setAddressSuggestions]   = useState([]);
+  const [isAddressLoading, setIsAddressLoading]       = useState(false);
 
   // Sync form states with saved user details when user changes
   useEffect(() => {
@@ -43,6 +47,41 @@ export const Cart = () => {
     setSaveCard(!!card);
     setSaveAddress(!!addr);
   }, [user, SAVED_CARD_KEY, SAVED_ADDRESS_KEY]);
+
+  // Helper for Photon format
+  const formatPhotonAddress = (feature) => {
+    const p = feature.properties;
+    const parts = [];
+    if (p.name && p.name !== p.street) parts.push(p.name);
+    if (p.street) {
+      let streetStr = p.street;
+      if (p.housenumber) streetStr += ` ${p.housenumber}`;
+      parts.push(streetStr);
+    }
+    if (p.city) parts.push(p.city);
+    if (p.country) parts.push(p.country);
+    return parts.join(', ') || 'Selected Location';
+  };
+
+  // Photon autocomplete
+  const searchAddress = async (query) => {
+    if (!query || query.length < 2) {
+      setAddressSuggestions([]);
+      return;
+    }
+    setIsAddressLoading(true);
+    try {
+      const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lon=34.7818&lat=32.0853`);
+      const data = await response.json();
+      if (data && data.features) {
+        setAddressSuggestions(data.features);
+      }
+    } catch (err) {
+      console.error('Error searching address:', err);
+    } finally {
+      setIsAddressLoading(false);
+    }
+  };
 
   const getCartTotalFormatted = () => {
     if (cart.length === 0) return '$0.00';
@@ -251,17 +290,51 @@ export const Cart = () => {
             <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-light)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
               <MapPin size={13} /> Shipping
             </p>
-            <div className="form-group" style={{ marginBottom: '12px' }}>
+            <div className="form-group address-autocomplete-wrapper" style={{ marginBottom: '12px' }}>
               <label className="form-label" htmlFor="checkout-address">Delivery Address</label>
-              <textarea
-                id="checkout-address"
-                className="form-input"
-                rows={2}
-                placeholder="123 Main St, Suite 4B, New York, NY 10001"
-                value={shippingAddress}
-                onChange={(e) => setShippingAddress(e.target.value)}
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <input
+                  id="checkout-address"
+                  type="text"
+                  className="form-input"
+                  style={{ paddingLeft: '36px' }}
+                  placeholder="Type address, e.g. Dizengoff 100, Tel Aviv..."
+                  value={shippingAddress}
+                  onChange={(e) => {
+                    setShippingAddress(e.target.value);
+                    searchAddress(e.target.value);
+                  }}
+                  required
+                  autoComplete="off"
+                />
+                {isAddressLoading && (
+                  <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                    <span className="spinner spinner-xs" style={{ width: '12px', height: '12px' }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {addressSuggestions.length > 0 && (
+                <ul className="address-suggestions-list">
+                  {addressSuggestions.map((suggestion, idx) => {
+                    const formatted = formatPhotonAddress(suggestion);
+                    return (
+                      <li
+                        key={idx}
+                        className="address-suggestion-item"
+                        onClick={() => {
+                          setShippingAddress(formatted);
+                          setAddressSuggestions([]);
+                        }}
+                      >
+                        {formatted}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
 
             {/* Save address checkbox */}

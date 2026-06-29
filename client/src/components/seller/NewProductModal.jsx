@@ -19,6 +19,13 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
 
   const [address, setAddress]                         = useState('');
   const [currency, setCurrency]                       = useState('USD');
+  const [barcode, setBarcode]                         = useState('');
+  const [isBarcodeLoading, setIsBarcodeLoading]       = useState(false);
+  const [barcodeStatus, setBarcodeStatus]             = useState(''); // 'success' | 'error' | ''
+  const [showBarcodeSearch, setShowBarcodeSearch]     = useState(false);
+  const [barcodeSearchQuery, setBarcodeSearchQuery]   = useState('');
+  const [barcodeSearchResults, setBarcodeSearchResults] = useState([]);
+  const [isBarcodeSearching, setIsBarcodeSearching]   = useState(false);
   
   // Pexels integration states
   const [imageSource, setImageSource]                 = useState('file'); // 'file' | 'pexels'
@@ -32,6 +39,7 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
   const [addressSearchQuery, setAddressSearchQuery]   = useState('');
   const [addressSuggestions, setAddressSuggestions]   = useState([]);
   const [isAddressLoading, setIsAddressLoading]       = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc]       = useState(false);
 
   const { get, post } = useFetch();
 
@@ -61,6 +69,11 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
     setPinnedCoords(null);
     setAddress('');
     setCurrency('USD');
+    setBarcode('');
+    setBarcodeStatus('');
+    setShowBarcodeSearch(false);
+    setBarcodeSearchQuery('');
+    setBarcodeSearchResults([]);
     setImageSource('file');
     setPexelsQuery('');
     setPexelsResults([]);
@@ -189,6 +202,202 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
     localStorage.setItem('pexels_api_key', key);
   };
 
+  const handleSuggestDescription = async () => {
+    if (!title.trim()) return;
+    setIsGeneratingDesc(true);
+    setErrorMsg('');
+    try {
+      const res = await post('/products/suggest-description', { title });
+      if (res.success && res.data) {
+        setDescription(res.data);
+      } else {
+        setErrorMsg(res.message || 'Failed to generate description.');
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to generate description.');
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
+
+  const handleBarcodeAutofill = async () => {
+    if (!barcode.trim()) {
+      setErrorMsg('Please enter a barcode (EAN/UPC) first.');
+      return;
+    }
+
+    setIsBarcodeLoading(true);
+    setBarcodeStatus('');
+    setErrorMsg('');
+
+    const activeCat = categories.find(c => c.id === categoryId);
+    const categoryName = activeCat ? activeCat.name : '';
+
+    try {
+      if (categoryName === 'Books & Education') {
+        const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcode.trim()}&format=json&jscmd=data`);
+        if (!response.ok) throw new Error('Failed to query Open Library API.');
+        
+        const data = await response.json();
+        const bookKey = `ISBN:${barcode.trim()}`;
+        
+        if (data && data[bookKey]) {
+          const book = data[bookKey];
+          setTitle(book.title || '');
+          
+          const authors = book.authors?.map(a => a.name).join(', ') || 'Unknown Author';
+          const publishers = book.publishers?.map(p => p.name).join(', ') || 'Unknown Publisher';
+          const pubDate = book.publish_date || 'Unknown Date';
+          const pages = book.pagination ? `${book.pagination} pages` : '';
+          
+          setDescription(`Title: ${book.title || ''}\nAuthors: ${authors}\nPublisher: ${publishers} (${pubDate})\n${pages ? 'Details: ' + pages : ''}`);
+          
+          if (book.cover?.large || book.cover?.medium) {
+            setImageSource('pexels');
+            setSelectedPexelsUrl(book.cover.large || book.cover.medium);
+          }
+          setBarcodeStatus('success');
+        } else {
+          throw new Error('Book not found in Open Library database.');
+        }
+      } else if (categoryName === 'Food & Grocery') {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode.trim()}.json`);
+        if (!response.ok) throw new Error('Failed to query Open Food Facts API.');
+        
+        const data = await response.json();
+        if (data && data.status === 1 && data.product) {
+          const p = data.product;
+          setTitle(p.product_name || p.product_name_he || p.product_name_en || '');
+          
+          const brand = p.brands || 'Unknown Brand';
+          const ingredients = p.ingredients_text || 'No ingredients text found';
+          const allergens = p.allergens ? p.allergens.replace(/en:/g, '') : 'None declared';
+          
+          setDescription(`Product Name: ${p.product_name || ''}\nBrand: ${brand}\nIngredients: ${ingredients}\nAllergens: ${allergens}`);
+          
+          const imgUrl = p.image_url || p.image_front_url || p.image_front_small_url;
+          if (imgUrl) {
+            setImageSource('pexels');
+            setSelectedPexelsUrl(imgUrl);
+          }
+          setBarcodeStatus('success');
+        } else {
+          throw new Error('Food product not found in Open Food Facts database.');
+        }
+      } else {
+        const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode.trim()}`);
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('UPCitemdb API rate limit reached (100 queries/day). Please enter details manually.');
+          }
+          throw new Error('Failed to query general barcode database.');
+        }
+        
+        const data = await response.json();
+        if (data && data.items && data.items.length > 0) {
+          const item = data.items[0];
+          setTitle(item.title || '');
+          
+          const brand = item.brand || '';
+          const model = item.model || '';
+          const desc = item.description || '';
+          
+          setDescription(`Brand: ${brand}\nModel: ${model}\nDescription: ${desc}`);
+          
+          if (item.images && item.images.length > 0) {
+            setImageSource('pexels');
+            setSelectedPexelsUrl(item.images[0]);
+          }
+          setBarcodeStatus('success');
+        } else {
+          throw new Error('Product not found in general barcode database.');
+        }
+      }
+    } catch (err) {
+      console.warn('Barcode lookup failed:', err.message);
+      setErrorMsg(err.message || 'Failed to fetch details for this barcode.');
+      setBarcodeStatus('error');
+    } finally {
+      setIsBarcodeLoading(false);
+    }
+  };
+
+  const handleSearchBarcodeByName = async () => {
+    if (!barcodeSearchQuery.trim()) return;
+    setIsBarcodeSearching(true);
+    setErrorMsg('');
+    setBarcodeSearchResults([]);
+
+    const activeCat = categories.find(c => c.id === categoryId);
+    const categoryName = activeCat ? activeCat.name : '';
+
+    try {
+      if (categoryName === 'Books & Education') {
+        const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(barcodeSearchQuery)}&fields=title,author_name,isbn&limit=15`);
+        if (!response.ok) throw new Error('Search failed on Open Library.');
+        const data = await response.json();
+        
+        if (data && data.docs) {
+          const results = data.docs
+            .filter(doc => doc.isbn && doc.isbn.length > 0)
+            .map(doc => ({
+              title: doc.title,
+              subtext: doc.author_name ? `by ${doc.author_name.join(', ')}` : 'Unknown Author',
+              barcode: doc.isbn[0],
+              source: 'Open Library'
+            }));
+          setBarcodeSearchResults(results);
+          if (results.length === 0) setErrorMsg('No books with barcodes found matching your search.');
+        } else {
+          setErrorMsg('No results found.');
+        }
+      } else if (categoryName === 'Food & Grocery') {
+        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(barcodeSearchQuery)}&search_simple=1&action=process&json=1&page_size=8`);
+        if (!response.ok) throw new Error('Search failed on Open Food Facts.');
+        const data = await response.json();
+        
+        if (data && data.products) {
+          const results = data.products
+            .filter(p => p.code)
+            .map(p => ({
+              title: p.product_name || p.product_name_he || p.product_name_en || 'Unknown Food Item',
+              subtext: p.brands ? `Brand: ${p.brands}` : 'Unknown Brand',
+              barcode: p.code,
+              source: 'Open Food Facts'
+            }));
+          setBarcodeSearchResults(results);
+          if (results.length === 0) setErrorMsg('No food products with barcodes found.');
+        } else {
+          setErrorMsg('No results found.');
+        }
+      } else {
+        const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(barcodeSearchQuery)}&search_simple=1&action=process&json=1&page_size=8`);
+        if (!response.ok) throw new Error('Search failed.');
+        const data = await response.json();
+        
+        if (data && data.products) {
+          const results = data.products
+            .filter(p => p.code)
+            .map(p => ({
+              title: p.product_name || 'Generic Item',
+              subtext: p.brands ? `Brand: ${p.brands}` : 'Generic Brand',
+              barcode: p.code,
+              source: 'Product Catalog'
+            }));
+          setBarcodeSearchResults(results);
+          if (results.length === 0) setErrorMsg('No general products with barcodes found. Try selecting "Food & Grocery" or "Books & Education" for optimal catalog searches.');
+        } else {
+          setErrorMsg('No results found.');
+        }
+      }
+    } catch (err) {
+      console.warn('Barcode catalog search failed:', err);
+      setErrorMsg(err.message || 'Failed to search catalog.');
+    } finally {
+      setIsBarcodeSearching(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -213,6 +422,9 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
       formData.append('currency', currency);
       if (address) {
         formData.append('address', address);
+      }
+      if (barcode) {
+        formData.append('barcode', barcode);
       }
       if (imageSource === 'file') {
         formData.append('image', imageFile);
@@ -341,7 +553,187 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="modal-sell-desc">Description</label>
+              <label className="form-label" htmlFor="modal-sell-barcode" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Barcode (EAN/UPC)</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Autofills title & description</span>
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  id="modal-sell-barcode"
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. 3017300045601 or 9780132350884"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleBarcodeAutofill}
+                  disabled={isBarcodeLoading || !barcode.trim()}
+                  className="btn btn-secondary btn-sm"
+                  style={{ height: '38px', padding: '0 12px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                >
+                  {isBarcodeLoading ? 'Searching...' : 'Autofill'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', alignItems: 'center' }}>
+                <div>
+                  {barcodeStatus === 'success' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--status-completed)' }}>✓ Metadata auto-populated successfully!</span>
+                  )}
+                  {barcodeStatus === 'error' && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--status-cancelled)' }}>✗ Failed to autofill from barcode</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBarcodeSearch(!showBarcodeSearch)}
+                  style={{ background: 'none', border: 'none', color: 'var(--secondary)', fontSize: '0.75rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                >
+                  {showBarcodeSearch ? 'Close Search Panel' : 'Search barcode by name'}
+                </button>
+              </div>
+
+              {showBarcodeSearch && (
+                <div className="glass-panel-static animate-in" style={{ padding: '14px', borderRadius: 'var(--radius-sm)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Find Barcode in Catalog</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ height: '32px', fontSize: '0.8rem' }}
+                      placeholder="Enter product name (e.g. Nutella, Clean Code)"
+                      value={barcodeSearchQuery}
+                      onChange={(e) => setBarcodeSearchQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchBarcodeByName(); } }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSearchBarcodeByName}
+                      disabled={isBarcodeSearching || !barcodeSearchQuery.trim()}
+                      className="btn btn-primary btn-sm"
+                      style={{ height: '32px', padding: '0 12px', fontSize: '0.78rem' }}
+                    >
+                      {isBarcodeSearching ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+
+                  {barcodeSearchResults.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto', marginTop: '4px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px' }}>
+                      {barcodeSearchResults.map((result, idx) => (
+                        <div
+                          key={idx}
+                          onClick={async () => {
+                            setBarcode(result.barcode);
+                            setShowBarcodeSearch(false);
+                            setIsBarcodeLoading(true);
+                            setBarcodeStatus('');
+                            setErrorMsg('');
+                            try {
+                              const activeCat = categories.find(c => c.id === categoryId);
+                              const categoryName = activeCat ? activeCat.name : '';
+                              if (categoryName === 'Books & Education') {
+                                const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${result.barcode}&format=json&jscmd=data`);
+                                if (!response.ok) throw new Error('Failed to query Open Library API.');
+                                const data = await response.json();
+                                const bookKey = `ISBN:${result.barcode}`;
+                                if (data && data[bookKey]) {
+                                  const book = data[bookKey];
+                                  setTitle(book.title || '');
+                                  const authors = book.authors?.map(a => a.name).join(', ') || 'Unknown Author';
+                                  const publishers = book.publishers?.map(p => p.name).join(', ') || 'Unknown Publisher';
+                                  const pubDate = book.publish_date || 'Unknown Date';
+                                  const pages = book.pagination ? `${book.pagination} pages` : '';
+                                  setDescription(`Title: ${book.title || ''}\nAuthors: ${authors}\nPublisher: ${publishers} (${pubDate})\n${pages ? 'Details: ' + pages : ''}`);
+                                  if (book.cover?.large || book.cover?.medium) {
+                                    setImageSource('pexels');
+                                    setSelectedPexelsUrl(book.cover.large || book.cover.medium);
+                                  }
+                                  setBarcodeStatus('success');
+                                } else {
+                                  throw new Error('Book details not found.');
+                                }
+                              } else if (categoryName === 'Food & Grocery') {
+                                const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${result.barcode}.json`);
+                                if (!response.ok) throw new Error('Failed to query Open Food Facts API.');
+                                const data = await response.json();
+                                if (data && data.status === 1 && data.product) {
+                                  const p = data.product;
+                                  setTitle(p.product_name || p.product_name_he || p.product_name_en || '');
+                                  const brand = p.brands || 'Unknown Brand';
+                                  const ingredients = p.ingredients_text || 'No ingredients text found';
+                                  const allergens = p.allergens ? p.allergens.replace(/en:/g, '') : 'None declared';
+                                  setDescription(`Product Name: ${p.product_name || ''}\nBrand: ${brand}\nIngredients: ${ingredients}\nAllergens: ${allergens}`);
+                                  const imgUrl = p.image_url || p.image_front_url || p.image_front_small_url;
+                                  if (imgUrl) {
+                                    setImageSource('pexels');
+                                    setSelectedPexelsUrl(imgUrl);
+                                  }
+                                  setBarcodeStatus('success');
+                                } else {
+                                  throw new Error('Food details not found.');
+                                }
+                              } else {
+                                const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${result.barcode}`);
+                                if (!response.ok) throw new Error('Failed to query general database.');
+                                const data = await response.json();
+                                if (data && data.items && data.items.length > 0) {
+                                  const item = data.items[0];
+                                  setTitle(item.title || '');
+                                  setDescription(`Brand: ${item.brand || ''}\nModel: ${item.model || ''}\nDescription: ${item.description || ''}`);
+                                  if (item.images && item.images.length > 0) {
+                                    setImageSource('pexels');
+                                    setSelectedPexelsUrl(item.images[0]);
+                                  }
+                                  setBarcodeStatus('success');
+                                } else {
+                                  throw new Error('Product details not found.');
+                                }
+                              }
+                            } catch (e) {
+                              setErrorMsg(e.message);
+                              setBarcodeStatus('error');
+                            } finally {
+                              setIsBarcodeLoading(false);
+                            }
+                          }}
+                          style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px', borderRadius: '4px', cursor: 'pointer', background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background var(--transition-fast)', textAlign: 'left' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.01)'}
+                        >
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.title}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            <span>{result.subtext}</span>
+                            <span>{result.barcode}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label flex justify-between items-center">
+                <span htmlFor="modal-sell-desc">Description</span>
+                <button
+                  type="button"
+                  onClick={handleSuggestDescription}
+                  disabled={isGeneratingDesc || !title.trim()}
+                  className="ai-suggest-btn"
+                >
+                  {isGeneratingDesc ? (
+                    <>
+                      <span className="spinner spinner-xs" style={{ width: '10px', height: '10px', borderWidth: '1.5px', borderTopColor: 'transparent', display: 'inline-block' }} />
+                      Generating...
+                    </>
+                  ) : (
+                    'Suggest with AI'
+                  )}
+                </button>
+              </label>
               <textarea
                 id="modal-sell-desc"
                 className="form-input"

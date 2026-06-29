@@ -119,12 +119,27 @@ export const Login = () => {
         {/* Footer link */}
         <div className="divider-text" style={{ margin: '24px 0' }}>or</div>
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
           Don't have an account?{' '}
           <Link to="/register" style={{ color: 'var(--primary-light)', fontWeight: 700 }}>
             Create one
           </Link>
         </p>
+
+        {/* Quick Demo Login Info */}
+        <div className="demo-accounts-box">
+          <p className="demo-accounts-title">
+            🔑 Demo Accounts:
+          </p>
+          <div className="demo-accounts-list">
+            <div>
+              <strong>Admin:</strong> <code className="demo-accounts-code">admin@c2c.com</code> / <code className="demo-accounts-code">Admin123!</code>
+            </div>
+            <div>
+              <strong>User:</strong> <code className="demo-accounts-code">john@c2c.com</code> / <code className="demo-accounts-code">Client123!</code>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

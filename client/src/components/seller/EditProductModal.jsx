@@ -17,13 +17,15 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
   const [address, setAddress]                         = useState('');
   const [currency, setCurrency]                       = useState('USD');
   const [pinnedCoords, setPinnedCoords]               = useState(null);
+  const [barcode, setBarcode]                         = useState('');
 
   // Photon autocomplete states
   const [addressSearchQuery, setAddressSearchQuery]   = useState('');
   const [addressSuggestions, setAddressSuggestions]   = useState([]);
   const [isAddressLoading, setIsAddressLoading]       = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc]       = useState(false);
 
-  const { get, put } = useFetch();
+  const { get, put, post } = useFetch();
 
   // Pre-fill form when product changes
   useEffect(() => {
@@ -35,6 +37,7 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
     setStockQuantity(String(product.stockQuantity ?? 1));
     setAddress(product.address || '');
     setCurrency(product.currency || 'USD');
+    setBarcode(product.barcode || '');
     setAddressSearchQuery(product.address || '');
     if (product.latitude && product.longitude) {
       setPinnedCoords({ lat: parseFloat(product.latitude), lng: parseFloat(product.longitude) });
@@ -115,6 +118,25 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
     }
   };
 
+  const handleSuggestDescription = async () => {
+    if (!title.trim()) return;
+    setIsGeneratingDesc(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await post('/products/suggest-description', { title });
+      if (res.success && res.data) {
+        setDescription(res.data);
+      } else {
+        setErrorMsg(res.message || 'Failed to generate description.');
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to generate description.');
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -130,7 +152,8 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
         currency,
         address: address || null,
         latitude: pinnedCoords ? pinnedCoords.lat : null,
-        longitude: pinnedCoords ? pinnedCoords.lng : null
+        longitude: pinnedCoords ? pinnedCoords.lng : null,
+        barcode: barcode || null
       });
       if (res.success) {
         setSuccessMsg('Product updated successfully!');
@@ -257,9 +280,39 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
               </select>
             </div>
 
+            {/* Barcode */}
+            <div className="form-group">
+              <label className="form-label" htmlFor="edit-product-barcode">Barcode (EAN/UPC)</label>
+              <input
+                id="edit-product-barcode"
+                type="text"
+                className="form-input"
+                placeholder="e.g. 3017300045601"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+              />
+            </div>
+
             {/* Description */}
             <div className="form-group">
-              <label className="form-label" htmlFor="edit-product-desc">Description</label>
+              <label className="form-label flex justify-between items-center">
+                <span htmlFor="edit-product-desc">Description</span>
+                <button
+                  type="button"
+                  onClick={handleSuggestDescription}
+                  disabled={isGeneratingDesc || !title.trim()}
+                  className="ai-suggest-btn"
+                >
+                  {isGeneratingDesc ? (
+                    <>
+                      <span className="spinner spinner-xs" style={{ width: '10px', height: '10px', borderWidth: '1.5px', borderTopColor: 'transparent', display: 'inline-block' }} />
+                      Generating...
+                    </>
+                  ) : (
+                    'Suggest with AI'
+                  )}
+                </button>
+              </label>
               <textarea
                 id="edit-product-desc"
                 className="form-input"

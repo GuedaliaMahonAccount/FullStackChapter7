@@ -26,6 +26,7 @@ const seedDatabase = async () => {
       { name: 'Electronics', description: 'Gadgets, devices, hardware, and components' },
       { name: 'Fashion & Apparel', description: 'Clothing, footwear, and accessories' },
       { name: 'Books & Education', description: 'Textbooks, literature, and educational material' },
+      { name: 'Food & Grocery', description: 'Packaged food, drinks, and grocery items' },
       { name: 'Home & Kitchen', description: 'Furniture, decor, and cooking appliances' },
       { name: 'Sports & Outdoors', description: 'Fitness gear, outdoor recreation, and sports equipment' },
       { name: 'Toys & Hobbies', description: 'Board games, action figures, and collectibles' }
@@ -486,6 +487,25 @@ const initializeDatabase = async () => {
     // Sync all models (create tables if they do not exist, update if they do)
     await sequelize.sync({ alter: true });
     console.log('MySQL schemas synchronized successfully.');
+
+    // Always ensure default categories exist
+    const defaultCategories = [
+      { name: 'Electronics', description: 'Gadgets, devices, hardware, and components' },
+      { name: 'Fashion & Apparel', description: 'Clothing, footwear, and accessories' },
+      { name: 'Books & Education', description: 'Textbooks, literature, and educational material' },
+      { name: 'Food & Grocery', description: 'Packaged food, drinks, and grocery items' },
+      { name: 'Home & Kitchen', description: 'Furniture, decor, and cooking appliances' },
+      { name: 'Sports & Outdoors', description: 'Fitness gear, outdoor recreation, and sports equipment' },
+      { name: 'Toys & Hobbies', description: 'Board games, action figures, and collectibles' }
+    ];
+
+    for (const cat of defaultCategories) {
+      await Category.findOrCreate({
+        where: { name: cat.name },
+        defaults: cat
+      });
+    }
+    console.log('Ensured default categories exist.');
     
     // Seed records only if SEED_ON_START is explicitly set to 'true'
     if (process.env.SEED_ON_START === 'true') {

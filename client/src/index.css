@@ -1629,3 +1629,441 @@ textarea.form-input {
   }
 }
 
+/* ========================================
+   ACADEMIC DEMO ACCOUNTS (LOGIN PAGE)
+======================================== */
+.demo-accounts-box {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.05));
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 0.78rem;
+}
+
+.demo-accounts-title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.demo-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.demo-accounts-code {
+  user-select: all;
+  color: var(--primary-light);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* ========================================
+   AI SUGGEST DESCRIPTION BUTTON
+======================================== */
+.ai-suggest-btn {
+  background: none;
+  border: none;
+  font-weight: 700;
+  padding: 0;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--transition-fast);
+}
+
+.ai-suggest-btn:not(:disabled) {
+  color: var(--primary-light);
+  cursor: pointer;
+}
+
+.ai-suggest-btn:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ========================================
+   ADMIN DASHBOARD TABS & TABLES
+======================================== */
+.admin-tab-btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-alert-success {
+  animation: fadeIn 0.2s;
+}
+
+.admin-alert-error {
+  animation: fadeIn 0.2s;
+}
+
+.admin-table-container {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-table-header-row {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.admin-table-header-row-sticky {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel, #12121a);
+  z-index: 10;
+}
+
+.admin-table-header {
+  padding: 12px 16px;
+}
+
+.admin-table-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.admin-table-row-logs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.83rem;
+  color: var(--text-primary);
+}
+
+.admin-table-cell {
+  padding: 14px 16px;
+}
+
+.admin-table-cell-name {
+  padding: 14px 16px;
+  font-weight: 600;
+}
+
+.admin-table-cell-actions {
+  padding: 14px 16px;
+  text-align: right;
+}
+
+.admin-block-btn {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.admin-block-btn.blocked {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-block-btn.active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.admin-log-cell-details {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-log-details-code {
+  font-size: 0.75rem;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.admin-header-icon {
+  background: rgba(167, 139, 250, 0.12);
+  color: #a78bfa;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 900;
+}
+
+.admin-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+
+.admin-tabs-container {
+  margin-bottom: 8px;
+}
+
+.admin-loading {
+  min-height: 300px;
+}
+
+.admin-panel-card {
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.badge-log-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-weight: 700;
+}
+.badge-log-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-weight: 700;
+}
+.badge-log-info {
+  background: rgba(167, 139, 250, 0.12);
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+/* ========================================
+   ADDRESS AUTOCOMPLETE DROPDOWN
+======================================== */
+.address-autocomplete-wrapper {
+  position: relative;
+}
+
+.address-suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--bg-panel, #1e1e2e);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  list-style: none;
+  padding: 4px 0;
+  margin: 4px 0 0 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.address-suggestion-item {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background var(--transition-fast);
+}
+
+.address-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.address-suggestion-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ========================================
+   WEATHER WIDGET CARD
+======================================== */
+.weather-card {
+  padding: 20px 24px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weather-header {
+  font-size: 0.85rem;
+}
+
+.weather-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.weather-condition {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.weather-temp {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--secondary);
+}
+
+.weather-advice-text {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ========================================
+   LISTINGS HEADER SORT SELECT
+======================================== */
+.listings-sort-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listings-sort-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.listings-sort-select {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+  width: 150px;
+}
+
+.listing-count-badge {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.05);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+}
+
+/* ========================================
+   API DOCUMENTATION PAGE (ApiInfo)
+======================================== */
+.api-info-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.api-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.api-info-card {
+  padding: 24px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.api-info-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.api-info-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.api-info-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.api-info-endpoint {
+  font-family: monospace;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--primary-light);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.api-info-description {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.api-info-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.api-info-badge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  font-weight: 600;
+}
+
+.footer-link-api {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  margin-top: 4px;
+}
+
+.footer-link-api:hover {
+  color: var(--secondary);
+}
+
+/* ========================================
+   NUTRI-SCORE STYLING (Food Category Specs)
+======================================== */
+.badge-nutri {
+  font-family: var(--font-heading);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.badge-nutri-a { background-color: #038141; }
+.badge-nutri-b { background-color: #85bb2f; }
+.badge-nutri-c { background-color: #fecb02; }
+.badge-nutri-d { background-color: #ee8100; }
+.badge-nutri-e { background-color: #e63e11; }
+

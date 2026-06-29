@@ -16,6 +16,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import SellerDashboard from './pages/SellerDashboard';
+import ApiInfo from './pages/ApiInfo';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -33,6 +34,7 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/products/:id" element={<ProductDetail />} />
+                  <Route path="/api-info" element={<ApiInfo />} />
                   
                   {/* Protected Routes */}
                   <Route 

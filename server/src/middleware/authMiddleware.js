@@ -27,6 +27,13 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Your account has been blocked by the administrator.'
+      });
+    }
+
     // Attach user object to request
     req.user = {
       id: user.id,

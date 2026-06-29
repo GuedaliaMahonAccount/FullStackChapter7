@@ -10,6 +10,9 @@ router.get('/', productController.getProducts);
 // Protected: get logged-in seller's own products
 router.get('/mine', verifyToken, productController.getMyProducts);
 
+// Protected: suggest description using AI
+router.post('/suggest-description', verifyToken, productController.suggestDescription);
+
 // Public: single product detail (must be AFTER /mine)
 router.get('/:id', productController.getProductDetail);
 

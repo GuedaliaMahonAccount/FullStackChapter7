@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Product, User, Category } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
 
-const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude, address, currency }, req = null) => {
+const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude, address, currency, barcode }, req = null) => {
   // Ensure category exists
   const category = await Category.findByPk(categoryId);
   if (!category) {
@@ -20,7 +20,8 @@ const createProduct = async ({ title, description, price, imageUrl, stockQuantit
     latitude: latitude ? parseFloat(latitude) : null,
     longitude: longitude ? parseFloat(longitude) : null,
     address: address || null,
-    currency: currency || 'USD'
+    currency: currency || 'USD',
+    barcode: barcode || null
   });
 
   // Log product listing event
@@ -133,7 +134,7 @@ const updateProduct = async (productId, sellerId, userRole, updates, req = null)
     throw { statusCode: 403, message: 'Unauthorized: You are not the owner of this product listing.' };
   }
 
-  const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency } = updates;
+  const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode } = updates;
 
   if (categoryId) {
     const category = await Category.findByPk(categoryId);
@@ -150,6 +151,7 @@ const updateProduct = async (productId, sellerId, userRole, updates, req = null)
     ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),
     ...(address !== undefined && { address: address || null }),
     ...(currency !== undefined && { currency }),
+    ...(barcode !== undefined && { barcode: barcode || null }),
   });
 
   await logEvent({

@@ -2,6 +2,15 @@
 
 This is a comprehensive Consumer-to-Consumer (C2C) marketplace application where users can buy and sell items in their local neighborhood. The application utilizes a hybrid database architecture (MySQL for core relational transactions and MongoDB for order tracking state transitions and audit logs) and supports real-time status updates using WebSockets (Socket.io) and item geographical listing visualization using **OpenFreeMap**.
 
+> [!IMPORTANT]
+> ### 🔑 Quick Demo Login Credentials (for Grading/Testing)
+> 
+> | Role | Email | Password | Privileges / Features |
+> | :--- | :--- | :--- | :--- |
+> | **System Administrator** | `admin@c2c.com` | `Admin123!` | Access Admin Portal, View MongoDB Event Logs, Block/Unblock Users, Update Order Status |
+> | **Client (Buyer/Seller)** | `john@c2c.com` | `Client123!` | Browse/filter items on map, place orders, view tracking, list/edit products, get AI description suggestions |
+> | **Alternative Client** | `jane@c2c.com` | `Client123!` | Additional buyer/seller mock account for testing trades |
+
 ---
 
 ## 🛠️ Tech Stack
@@ -89,3 +98,26 @@ The database initialization script automatically registers the following account
 - **Email**: `admin@c2c.com`
 - **Password**: `Admin123!`
 - **Role**: Admin (can access the Restricted Admin Dashboard to update order states and trigger live socket broadcasts to buyers).
+
+---
+
+## 🔌 External API Integrations (Zero Configuration)
+
+To make it as easy as possible for instructors to evaluate the project, all external APIs were chosen to run **without any API keys or configuration settings**:
+
+1. **Photon Geocoding API (`https://photon.komoot.io/`)**:
+   - **Purpose:** Powers real-time address autocomplete dropdowns when sellers place listing pins and when buyers enter delivery details on checkout.
+   - **Features:** Instantly queries OSM location directories.
+
+2. **OSRM Routing Engine (`http://router.project-osrm.org/`)**:
+   - **Purpose:** Calculates real-time road driving distances and travel times between the buyer's current GPS position and the product's location.
+   - **Resilience:** Wrapped in a 2-second `AbortController` timeout falling back seamlessly to offline Haversine straight-line math if the server is slow or rate-limited.
+
+3. **Open-Meteo Weather Forecast (`https://api.open-meteo.com/`)**:
+   - **Purpose:** Queries coordinates-based current temperature and weather conditions to display dynamic pickup advice (e.g., rain and temperature alerts).
+
+4. **MyMemory Translation Service (`https://api.mymemory.translated.net/`)**:
+   - **Purpose:** Handles translation of product details and descriptions from English to Hebrew dynamically inside the buyer's product details page.
+
+5. **Frankfurter Exchange Rates (`https://api.frankfurter.app/`)**:
+   - **Purpose:** Fetches current ILS exchange rates to convert and display foreign-currency item listings in local Israeli currency (ILS).

@@ -4,7 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
-import { ShoppingCart, User, ChevronLeft, MapPin, Box, CheckCircle, Lock, Globe, Languages, RefreshCw } from 'lucide-react';
+import { ShoppingCart, User, ChevronLeft, MapPin, Box, CheckCircle, Lock, Globe, Languages, RefreshCw, Plus, Minus } from 'lucide-react';
 import { getImageUrl, formatPrice } from '../utils/format';
 
 export const ProductDetail = () => {
@@ -14,6 +14,7 @@ export const ProductDetail = () => {
   const [loading, setLoading]   = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [added, setAdded]       = useState(false);
+  const [qty, setQty]           = useState(1);
 
   // MyMemory translation states
   const [translatedDesc, setTranslatedDesc] = useState('');
@@ -29,8 +30,21 @@ export const ProductDetail = () => {
   const [customConvertedPrice, setCustomConvertedPrice] = useState(null);
   const [isCustomConverting, setIsCustomConverting] = useState(false);
 
+  // Weather states
+  const [weatherData, setWeatherData]             = useState(null);
+  const [weatherLoading, setWeatherLoading]       = useState(false);
+
+  // OSRM & Location states
+  const [userCoords, setUserCoords]               = useState(null);
+  const [osrmData, setOsrmData]                   = useState(null);
+  const [osrmLoading, setOsrmLoading]             = useState(false);
+
+  // Barcode specifications states
+  const [barcodeData, setBarcodeData]             = useState(null);
+  const [barcodeLoading, setBarcodeLoading]       = useState(false);
+
   const { get }      = useFetch();
-  const { addToCart } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
   const { user }     = useAuth();
 
   // Fetch Frankfurter conversion to ILS automatically
@@ -97,7 +111,7 @@ export const ProductDetail = () => {
     
     setIsTranslating(true);
     try {
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(product.description)}&langpair=auto|he`);
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(product.description)}&langpair=en|he`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.responseData && data.responseData.translatedText) {
@@ -132,10 +146,227 @@ export const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = () => {
-    addToCart(product, 1);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2200);
+  // Sync local qty state with cart quantity on load
+  useEffect(() => {
+    if (product) {
+      const itemInCart = cart.find(item => item.id === product.id);
+      setQty(itemInCart ? itemInCart.quantity : 1);
+    }
+  }, [product, cart.length]);
+
+  // Fetch weather data from Open-Meteo on product load
+  useEffect(() => {
+    if (!product || !product.latitude || !product.longitude) return;
+    
+    const fetchWeather = async () => {
+      setWeatherLoading(true);
+      try {
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${product.latitude}&longitude=${product.longitude}&current_weather=true`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.current_weather) {
+            setWeatherData(data.current_weather);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching weather:', err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+    fetchWeather();
+  }, [product]);
+
+  const getWeatherAdvice = (code, temp) => {
+    let condition = 'Clear Sky ☀️';
+    let advice = 'Weather is perfect for picking up your item!';
+    let type = 'pleasant';
+    
+    if (code >= 51 && code <= 67) {
+      condition = 'Rainy 🌧️';
+      advice = 'It is raining outside! Drive safely and remember your umbrella.';
+      type = 'rainy';
+    } else if (code >= 80 && code <= 82) {
+      condition = 'Rain Showers 🌦️';
+      advice = 'Showers detected. You might want to grab a coat and leave umbrellas outside!';
+      type = 'rainy';
+    } else if (code >= 95 && code <= 99) {
+      condition = 'Thunderstorm ⛈️';
+      advice = 'Thunderstorms in area! We recommend contacting the seller to reschedule pick-up.';
+      type = 'stormy';
+    } else if (code >= 71 && code <= 77) {
+      condition = 'Snowy ❄️';
+      advice = 'Snowing! Dress very warmly and check road conditions.';
+      type = 'snowy';
+    } else if (code >= 1 && code <= 3) {
+      condition = 'Partly Cloudy ⛅';
+    } else if (code >= 45 && code <= 48) {
+      condition = 'Foggy 🌫️';
+      advice = 'Low visibility due to fog. Drive carefully when picking up.';
+      type = 'foggy';
+    }
+
+    if (type === 'pleasant') {
+      if (temp > 30) {
+        advice = 'It is very hot outside! Stay hydrated during pick-up.';
+      } else if (temp < 13) {
+        advice = 'It is chilly outside. Remember to wear a warm jacket/coat!';
+      }
+    }
+
+    return { condition, advice, type };
+  };
+
+  // Get user coordinates on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn("Could not retrieve user location for details:", error.message);
+          // Fallback to Tel Aviv Center default coordinate
+          setUserCoords({ lat: 32.0853, lng: 34.7818 });
+        }
+      );
+    } else {
+      setUserCoords({ lat: 32.0853, lng: 34.7818 });
+    }
+  }, []);
+
+  // Fetch OSRM routing data with timeout abort controller
+  useEffect(() => {
+    if (!product || !product.latitude || !product.longitude || !userCoords) return;
+
+    const fetchRouting = async () => {
+      setOsrmLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2-second timeout
+
+      try {
+        const prodLat = parseFloat(product.latitude);
+        const prodLng = parseFloat(product.longitude);
+        const userLat = parseFloat(userCoords.lat);
+        const userLng = parseFloat(userCoords.lng);
+
+        const response = await fetch(
+          `http://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${prodLng},${prodLat}?overview=false`,
+          { signal: controller.signal }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            const route = data.routes[0];
+            setOsrmData({
+              duration: route.duration, // seconds
+              distance: route.distance  // meters
+            });
+          }
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.warn("OSRM routing request timed out after 2 seconds.");
+        } else {
+          console.error("Error fetching OSRM routing:", err);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        setOsrmLoading(false);
+      }
+    };
+
+    fetchRouting();
+  }, [product, userCoords]);
+
+  // Fetch barcode specs on load
+  useEffect(() => {
+    if (!product || !product.barcode) {
+      setBarcodeData(null);
+      return;
+    }
+
+    const fetchBarcodeSpecs = async () => {
+      setBarcodeLoading(true);
+      try {
+        const catName = product.category?.name || '';
+        const barcodeStr = product.barcode.trim();
+
+        if (catName === 'Books & Education') {
+          const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcodeStr}&format=json&jscmd=data`);
+          if (response.ok) {
+            const data = await response.json();
+            const key = `ISBN:${barcodeStr}`;
+            if (data && data[key]) {
+              setBarcodeData({
+                type: 'book',
+                title: data[key].title,
+                authors: data[key].authors?.map(a => a.name).join(', ') || 'Unknown',
+                publishers: data[key].publishers?.map(p => p.name).join(', ') || 'Unknown',
+                publishDate: data[key].publish_date,
+                pages: data[key].pagination,
+                cover: data[key].cover?.medium
+              });
+            }
+          }
+        } else if (catName === 'Food & Grocery') {
+          const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcodeStr}.json`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.status === 1 && data.product) {
+              const p = data.product;
+              setBarcodeData({
+                type: 'food',
+                brand: p.brands,
+                grade: p.nutrition_grades?.toUpperCase(),
+                allergens: p.allergens ? p.allergens.replace(/en:/g, '').split(',') : [],
+                ingredients: p.ingredients_text,
+                image: p.image_url || p.image_front_url
+              });
+            }
+          }
+        } else {
+          const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcodeStr}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.items && data.items.length > 0) {
+              const item = data.items[0];
+              setBarcodeData({
+                type: 'general',
+                brand: item.brand,
+                model: item.model,
+                description: item.description,
+                specs: item.specifications
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch specs details:', err);
+      } finally {
+        setBarcodeLoading(false);
+      }
+    };
+
+    fetchBarcodeSpecs();
+  }, [product]);
+
+  // Haversine Distance Calculation (in km)
+  const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c;
   };
 
   if (loading) {
@@ -218,6 +449,130 @@ export const ProductDetail = () => {
               {showTranslation ? translatedDesc : product.description}
             </p>
           </div>
+
+          {/* Barcode Specifications Card */}
+          {barcodeLoading && (
+            <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div className="spinner spinner-sm" style={{ marginRight: '8px' }} />
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Retrieving barcode specifications...</span>
+            </div>
+          )}
+
+          {!barcodeLoading && barcodeData && (
+            <div className="glass-panel-static animate-in" style={{ padding: '28px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Barcode Metadata Specification
+                </h3>
+                <span className="badge badge-teal" style={{ fontSize: '0.7rem' }}>
+                  {barcodeData.type === 'food' ? 'Open Food Facts' : barcodeData.type === 'book' ? 'Open Library' : 'UPCitemdb'}
+                </span>
+              </div>
+
+              {barcodeData.type === 'food' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    {barcodeData.brand && (
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Brand</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{barcodeData.brand}</span>
+                      </div>
+                    )}
+                    {barcodeData.grade && (
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Nutri-Score</span>
+                        <span className={`badge-nutri badge-nutri-${barcodeData.grade.toLowerCase()}`} style={{ display: 'inline-block', fontWeight: 950, padding: '4px 12px', borderRadius: '4px', fontSize: '1.05rem', color: '#fff' }}>
+                          {barcodeData.grade}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {barcodeData.allergens && barcodeData.allergens.length > 0 && (
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Declared Allergens</span>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {barcodeData.allergens.filter(Boolean).map((alg, index) => (
+                          <span key={index} className="badge badge-error" style={{ fontSize: '0.72rem', textTransform: 'capitalize' }}>
+                            ⚠️ {alg.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {barcodeData.ingredients && (
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Ingredients List</span>
+                      <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                        {barcodeData.ingredients}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {barcodeData.type === 'book' && (
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'start', flexWrap: 'wrap' }}>
+                  {barcodeData.cover && (
+                    <div style={{ width: '100px', height: '140px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
+                      <img src={barcodeData.cover} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '200px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Authors</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.authors}</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Publishers</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.publishers}</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Publication Date</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.publishDate || 'N/A'}</span>
+                      </div>
+                      {barcodeData.pages && (
+                        <div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Pages count</span>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.pages}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {barcodeData.type === 'general' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {barcodeData.brand && (
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Brand</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.brand}</span>
+                      </div>
+                    )}
+                    {barcodeData.model && (
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Model</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.model}</span>
+                      </div>
+                    )}
+                  </div>
+                  {barcodeData.description && (
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Specification Details</span>
+                      <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                        {barcodeData.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: Summary + Actions */}
@@ -307,20 +662,125 @@ export const ProductDetail = () => {
                   </div>
                 );
               }
+              const cartItem = cart.find(item => item.id === product.id);
+              const currentQty = cartItem ? cartItem.quantity : 0;
+
               return (
-                <button
-                  id="product-add-to-cart-btn"
-                  onClick={handleAddToCart}
-                  className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
-                  style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
-                  disabled={product.stockQuantity === 0}
-                >
-                  {added ? (
-                    <><CheckCircle size={18} /> Added to Cart!</>
-                  ) : (
-                    <><ShoppingCart size={18} /> Add to Cart</>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {product.stockQuantity > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Quantity:</span>
+                      <div className="qty-control">
+                        <button 
+                          className="qty-btn" 
+                          onClick={() => setQty(prev => Math.max(0, prev - 1))}
+                          disabled={qty <= 0}
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <span className="qty-value">{qty}</span>
+                        <button 
+                          className="qty-btn" 
+                          onClick={() => setQty(prev => Math.min(product.stockQuantity, prev + 1))}
+                          disabled={qty >= product.stockQuantity}
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+
+                  {(() => {
+                    if (qty === 0) {
+                      if (currentQty > 0) {
+                        return (
+                          <button
+                            onClick={() => {
+                              removeFromCart(product.id);
+                              setQty(1); // Reset local state
+                            }}
+                            className="btn btn-lg btn-secondary"
+                            style={{ width: '100%', borderRadius: 'var(--radius-sm)', color: 'var(--status-cancelled)' }}
+                          >
+                            Remove from Cart
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          className="btn btn-lg btn-primary"
+                          style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+                          disabled
+                        >
+                          Add to Cart
+                        </button>
+                      );
+                    }
+
+                    if (currentQty === 0) {
+                      return (
+                        <button
+                          id="product-add-to-cart-btn"
+                          onClick={() => {
+                            addToCart(product, qty);
+                            setAdded(true);
+                            setTimeout(() => setAdded(false), 2200);
+                          }}
+                          className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
+                          style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
+                        >
+                          {added ? (
+                            <><CheckCircle size={18} /> Added to Cart!</>
+                          ) : (
+                            <><ShoppingCart size={18} /> Add to Cart</>
+                          )}
+                        </button>
+                      );
+                    }
+
+                    // If already in cart
+                    if (qty === currentQty) {
+                      return (
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            className="btn btn-lg btn-secondary"
+                            style={{ flex: 1, borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', color: 'var(--status-cancelled)', padding: '10px 4px' }}
+                            onClick={() => {
+                              removeFromCart(product.id);
+                              setQty(1); // Reset local state
+                            }}
+                          >
+                            Remove
+                          </button>
+                          <div
+                            className="btn btn-lg btn-accent"
+                            style={{ flex: 1.2, borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'default', pointerEvents: 'none' }}
+                          >
+                            <CheckCircle size={16} /> Added ({currentQty})
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        onClick={() => {
+                          updateQuantity(product.id, qty);
+                          setAdded(true);
+                          setTimeout(() => setAdded(false), 2200);
+                        }}
+                        className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
+                        style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
+                      >
+                        {added ? (
+                          <><CheckCircle size={18} /> Cart Updated!</>
+                        ) : (
+                          <>Update Cart Quantity</>
+                        )}
+                      </button>
+                    );
+                  })()}
+                </div>
               );
             })()}
 
@@ -352,6 +812,35 @@ export const ProductDetail = () => {
             </div>
           </div>
 
+          {/* Weather Widget */}
+          {hasLocation && (weatherData || weatherLoading) && (
+            <div className="glass-panel-static weather-card">
+              <h3 className="section-title weather-header" style={{ margin: 0 }}>
+                <Globe size={14} style={{ color: 'var(--primary-light)' }} /> Pick-up Location Weather
+              </h3>
+              {weatherLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+                  <span className="spinner spinner-sm" />
+                </div>
+              ) : (
+                (() => {
+                  const advice = getWeatherAdvice(weatherData.weathercode, weatherData.temperature);
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                      <div className="weather-info-row">
+                        <span className="weather-condition">{advice.condition}</span>
+                        <span className="weather-temp">{weatherData.temperature}°C</span>
+                      </div>
+                      <p className="weather-advice-text">
+                        {advice.advice}
+                      </p>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          )}
+
           {/* Map */}
           {hasLocation && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -363,6 +852,36 @@ export const ProductDetail = () => {
                 <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginTop: '-4px' }}>
                   <strong>Address:</strong> {product.address}
                 </p>
+              )}
+
+              {/* OSRM Route Info / Fallback straight-line distance */}
+              {hasLocation && (
+                <div style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginTop: '-4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: 'var(--primary-light)', fontWeight: 600 }}>Proximity:</span>
+                  {osrmLoading ? (
+                    <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><span className="spinner spinner-xs" style={{ width: '10px', height: '10px' }} /> Calculating route...</span>
+                  ) : osrmData ? (
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                      🚗 {Math.round(osrmData.duration / 60)} min drive ({(osrmData.distance / 1000).toFixed(1)} km by road)
+                    </span>
+                  ) : userCoords ? (
+                    (() => {
+                      const straightDist = getHaversineDistance(
+                        parseFloat(userCoords.lat),
+                        parseFloat(userCoords.lng),
+                        parseFloat(product.latitude),
+                        parseFloat(product.longitude)
+                      );
+                      return (
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          📍 {straightDist.toFixed(1)} km away (straight line)
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)' }}>Location permission required for route calculation</span>
+                  )}
+                </div>
               )}
               <div
                 className="glass-panel-static"

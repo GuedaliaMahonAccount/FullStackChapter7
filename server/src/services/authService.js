@@ -61,6 +61,10 @@ const loginUser = async ({ email, password }, req = null) => {
     throw { statusCode: 401, message: 'Invalid email or password.' };
   }
 
+  if (user.isBlocked) {
+    throw { statusCode: 403, message: 'Access Denied: Your account has been blocked by the administrator.' };
+  }
+
   // Generate JWT token
   const payload = {
     id: user.id,

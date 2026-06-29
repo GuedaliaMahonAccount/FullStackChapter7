@@ -39,6 +39,12 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(255),
     allowNull: true,
     field: 'avatar_url'
+  },
+  isBlocked: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'is_blocked'
   }
 }, {
   tableName: 'users',

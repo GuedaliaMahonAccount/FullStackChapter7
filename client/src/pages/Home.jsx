@@ -13,8 +13,47 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [exchangeRates, setExchangeRates] = useState(null);
 
+  // Sorting and Location states
+  const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'priceAsc' | 'priceDesc' | 'distance'
+  const [userCoords, setUserCoords] = useState(null);
+
   const { get } = useFetch();
   const { addToCart } = useCart();
+
+  // Haversine Distance Calculation (in km)
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c;
+  };
+
+  // Get user coordinates on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn("Could not retrieve user location:", error.message);
+          // Fallback to Tel Aviv Center default coordinate
+          setUserCoords({ lat: 32.0853, lng: 34.7818 });
+        }
+      );
+    } else {
+      setUserCoords({ lat: 32.0853, lng: 34.7818 });
+    }
+  }, []);
 
   // Fetch Frankfurter rates on mount
   useEffect(() => {
@@ -56,6 +95,21 @@ export const Home = () => {
     };
     fetchData();
   }, [selectedCategory, searchQuery]);
+
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortBy === 'priceAsc') {
+      return parseFloat(a.price) - parseFloat(b.price);
+    }
+    if (sortBy === 'priceDesc') {
+      return parseFloat(b.price) - parseFloat(a.price);
+    }
+    if (sortBy === 'distance' && userCoords) {
+      const distA = a.latitude && a.longitude ? getDistance(userCoords.lat, userCoords.lng, parseFloat(a.latitude), parseFloat(a.longitude)) : Infinity;
+      const distB = b.latitude && b.longitude ? getDistance(userCoords.lat, userCoords.lng, parseFloat(b.latitude), parseFloat(b.longitude)) : Infinity;
+      return distA - distB;
+    }
+    return 0; // featured (default)
+  });
 
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -125,13 +179,29 @@ export const Home = () => {
 
         {/* Left: Product Grid */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h2 className="section-title" style={{ fontSize: '1.1rem' }}>
-            <Layers size={18} style={{ color: 'var(--secondary)' }} />
-            Active Listings
-            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '2px 10px', borderRadius: 'var(--radius-full)', border: '1px solid var(--border)' }}>
-              {products.length}
-            </span>
-          </h2>
+          <div className="section-header w-full">
+            <h2 className="section-title" style={{ fontSize: '1.1rem', margin: 0 }}>
+              <Layers size={18} style={{ color: 'var(--secondary)' }} />
+              Active Listings
+              <span className="listing-count-badge">
+                {products.length}
+              </span>
+            </h2>
+            
+            <div className="listings-sort-container">
+              <span className="listings-sort-label">Sort by:</span>
+              <select
+                className="form-input listings-sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="featured">Featured</option>
+                <option value="priceAsc">Price: Low to High</option>
+                <option value="priceDesc">Price: High to Low</option>
+                {userCoords && <option value="distance">Distance: Nearest</option>}
+              </select>
+            </div>
+          </div>
 
           {loading ? (
             <div className="loading-center">
@@ -151,39 +221,48 @@ export const Home = () => {
             </div>
           ) : (
             <div className="grid-cols-responsive">
-              {products.map((product, i) => (
-                <article
-                  key={product.id}
-                  className="product-card"
-                  style={{ animationDelay: `${i * 40}ms` }}
-                >
-                  {/* Image */}
-                  <div className="product-card-img">
-                    <img
-                      src={getImageUrl(product.imageUrl)}
-                      alt={product.title}
-                    />
-                    <div className="product-card-price-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', padding: '6px 10px', height: 'auto' }}>
-                      <div style={{ fontWeight: 800 }}>{formatPrice(product.price, product.currency)}</div>
-                      {product.currency !== 'ILS' && exchangeRates && exchangeRates.rates?.[product.currency] && (
-                        <div style={{ fontSize: '0.68rem', opacity: 0.85, fontWeight: 500 }}>
-                          ≈ {formatPrice(product.price / exchangeRates.rates[product.currency], 'ILS')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              {sortedProducts.map((product, i) => {
+                const distance = product.latitude && product.longitude && userCoords
+                  ? getDistance(userCoords.lat, userCoords.lng, parseFloat(product.latitude), parseFloat(product.longitude))
+                  : null;
 
-                  {/* Body */}
-                  <div className="product-card-body">
-                    {/* Tags */}
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      <span className="badge badge-primary">{product.category?.name}</span>
-                      {product.latitude && (
-                        <span className="badge badge-teal">
-                          <MapPin size={9} /> Local
-                        </span>
-                      )}
+                return (
+                  <article
+                    key={product.id}
+                    className="product-card"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    {/* Image */}
+                    <div className="product-card-img">
+                      <img
+                        src={getImageUrl(product.imageUrl)}
+                        alt={product.title}
+                      />
+                      <div className="product-card-price-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', padding: '6px 10px', height: 'auto' }}>
+                        <div style={{ fontWeight: 800 }}>{formatPrice(product.price, product.currency)}</div>
+                        {product.currency !== 'ILS' && exchangeRates && exchangeRates.rates?.[product.currency] && (
+                          <div style={{ fontSize: '0.68rem', opacity: 0.85, fontWeight: 500 }}>
+                            ≈ {formatPrice(product.price / exchangeRates.rates[product.currency], 'ILS')}
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Body */}
+                    <div className="product-card-body">
+                      {/* Tags */}
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <span className="badge badge-primary">{product.category?.name}</span>
+                        {distance !== null ? (
+                          <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <MapPin size={9} /> {distance.toFixed(1)} km away
+                          </span>
+                        ) : product.latitude ? (
+                          <span className="badge badge-teal">
+                            <MapPin size={9} /> Local
+                          </span>
+                        ) : null}
+                      </div>
 
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                       {product.title}
@@ -219,13 +298,14 @@ export const Home = () => {
                     </div>
                   </div>
                 </article>
-              ))}
+              );
+            })}
             </div>
           )}
         </div>
 
         {/* Right: Map */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '100px', alignSelf: 'start' }}>
           <h2 className="section-title" style={{ fontSize: '1.1rem' }}>
             <MapPin size={18} style={{ color: 'var(--primary)' }} />
             Geomapping Feed
@@ -233,9 +313,9 @@ export const Home = () => {
 
           <div
             className="glass-panel-static"
-            style={{ flex: 1, minHeight: '480px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 0 }}
+            style={{ height: 'calc(100vh - 220px)', minHeight: '480px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 0 }}
           >
-            {!loading && <OpenFreeMap products={products} />}
+            {!loading && <OpenFreeMap products={products} height="100%" />}
           </div>
         </div>
       </div>

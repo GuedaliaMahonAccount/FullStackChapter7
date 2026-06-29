@@ -49,6 +49,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    if (user) {
+      const userId = user.id || user._id;
+      if (userId) {
+        localStorage.removeItem(`c2c_cart_${userId}`);
+      }
+    }
     localStorage.removeItem('c2c_token');
     setToken(null);
     setUser(null);

@@ -73,10 +73,15 @@ const Product = sequelize.define('Product', {
     type: DataTypes.STRING(3),
     allowNull: false,
     defaultValue: 'USD'
+  },
+  barcode: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   }
 }, {
   tableName: 'products',
-  underscored: true
+  underscored: true,
+  paranoid: true
 });
 
 module.exports = Product;
