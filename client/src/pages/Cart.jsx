@@ -8,12 +8,9 @@ import { getImageUrl, formatPrice } from '../utils/format';
 
 export const Cart = () => {
   const { cart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
-  const { user } = useAuth();
-  const { post } = useFetch();
+  const { user, updateUserBilling } = useAuth();
+  const { post, patch } = useFetch();
   const navigate = useNavigate();
-
-  const SAVED_CARD_KEY = user?.id ? `c2c_saved_card_${user.id}` : 'c2c_saved_card';
-  const SAVED_ADDRESS_KEY = user?.id ? `c2c_saved_address_${user.id}` : 'c2c_saved_address';
 
   // ---------- Form state ----------
   const [savedCard, setSavedCard]             = useState(null);
@@ -33,20 +30,22 @@ export const Cart = () => {
 
   // Sync form states with saved user details when user changes
   useEffect(() => {
-    let card = null;
-    try {
-      card = JSON.parse(localStorage.getItem(SAVED_CARD_KEY)) || null;
-    } catch {
-      card = null;
+    if (!user) {
+      setSavedCard(null);
+      setShippingAddress('');
+      setCardExpiry('');
+      setSaveCard(false);
+      setSaveAddress(false);
+      return;
     }
-    const addr = localStorage.getItem(SAVED_ADDRESS_KEY) || '';
 
+    const card = user.savedCardLast4 ? { last4: user.savedCardLast4, expiry: user.savedCardExpiry } : null;
     setSavedCard(card);
-    setShippingAddress(addr);
-    setCardExpiry(card?.expiry || '');
-    setSaveCard(!!card);
-    setSaveAddress(!!addr);
-  }, [user, SAVED_CARD_KEY, SAVED_ADDRESS_KEY]);
+    setShippingAddress(user.savedAddress || '');
+    setCardExpiry(user.savedCardExpiry || '');
+    setSaveCard(!!user.savedCardLast4);
+    setSaveAddress(!!user.savedAddress);
+  }, [user]);
 
   // Helper for Photon format
   const formatPhotonAddress = (feature) => {
@@ -120,21 +119,23 @@ export const Cart = () => {
       return;
     }
 
-    // Save address local storage logic
-    if (saveAddress) {
-      localStorage.setItem(SAVED_ADDRESS_KEY, shippingAddress);
-    } else {
-      localStorage.removeItem(SAVED_ADDRESS_KEY);
-    }
+    // Save address / card preferences on the server securely
+    if (user) {
+      const billingPayload = {
+        savedAddress: saveAddress ? shippingAddress : null,
+        savedCardLast4: saveCard ? (usingSavedCard ? savedCard.last4 : rawCard.slice(-4)) : null,
+        savedCardExpiry: saveCard ? cardExpiry : null
+      };
 
-    // ⚠️ PCI-DSS safe save: ONLY last 4 digits + expiry — NEVER store full PAN or CVV
-    if (saveCard) {
-      if (!usingSavedCard) {
-        const last4 = rawCard.slice(-4);
-        localStorage.setItem(SAVED_CARD_KEY, JSON.stringify({ last4, expiry: cardExpiry }));
-      }
-    } else {
-      localStorage.removeItem(SAVED_CARD_KEY);
+      patch('/auth/profile/billing', billingPayload)
+        .then(billingRes => {
+          if (billingRes && billingRes.success && updateUserBilling) {
+            updateUserBilling(billingRes.data);
+          }
+        })
+        .catch(err => {
+          console.warn('Failed to update billing details on server:', err);
+        });
     }
 
     setIsSubmitting(true);

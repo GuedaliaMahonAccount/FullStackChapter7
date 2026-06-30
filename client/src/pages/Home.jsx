@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
 import { Search, MapPin, Layers, ShoppingCart, ArrowRight, TrendingUp } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { getImageUrl, formatPrice } from '../utils/format';
 
 export const Home = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -262,7 +266,35 @@ export const Home = () => {
                             <MapPin size={9} /> Local
                           </span>
                         ) : null}
+
+                        {product.stockQuantity <= 0 ? (
+                          <span className="badge badge-error" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>Out of Stock</span>
+                        ) : (
+                          <span className="badge badge-secondary" style={{ fontSize: '0.68rem', padding: '2px 6px', opacity: 0.9 }}>
+                            {product.stockQuantity} in stock
+                          </span>
+                        )}
                       </div>
+
+                      {(() => {
+                        const reviews = product.reviews || [];
+                        const reviewsCount = reviews.length;
+                        const avgRating = reviewsCount > 0 
+                          ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviewsCount).toFixed(1)
+                          : 0;
+
+                        return reviewsCount > 0 ? (
+                          <div className="card-rating-badge">
+                            <span>★</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{avgRating}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>({reviewsCount})</span>
+                          </div>
+                        ) : (
+                          <div className="card-rating-empty">
+                            No reviews yet
+                          </div>
+                        );
+                      })()}
 
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                       {product.title}
@@ -275,12 +307,18 @@ export const Home = () => {
                     {/* Footer */}
                     <div className="product-card-footer">
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        By {product.seller?.fullName}
+                        By {user && product.seller && user.id === product.seller.id ? 'Me' : product.seller?.fullName}
                       </span>
 
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
-                          onClick={() => addToCart(product, 1)}
+                          onClick={() => {
+                            if (!user) {
+                              navigate('/login');
+                            } else {
+                              addToCart(product, 1);
+                            }
+                          }}
                           className="btn btn-secondary btn-icon"
                           title="Add to Cart"
                           disabled={product.stockQuantity === 0}

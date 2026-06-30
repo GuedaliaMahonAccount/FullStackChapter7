@@ -141,20 +141,41 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+
+    const originalCategoryId = String(product.category?.id ?? product.categoryId ?? '');
+    const originalPrice = parseFloat(product.price);
+    const nextPrice = parseFloat(price);
+    const originalStock = parseInt(product.stockQuantity, 10);
+    const nextStock = parseInt(stockQuantity, 10);
+    const originalAddress = product.address || null;
+    const nextAddress = address.trim() || null;
+    const originalBarcode = product.barcode || null;
+    const nextBarcode = barcode.trim() || null;
+    const originalLat = product.latitude !== null && product.latitude !== undefined ? parseFloat(product.latitude) : null;
+    const originalLng = product.longitude !== null && product.longitude !== undefined ? parseFloat(product.longitude) : null;
+    const nextLat = pinnedCoords ? pinnedCoords.lat : null;
+    const nextLng = pinnedCoords ? pinnedCoords.lng : null;
+
+    const updates = {};
+    if (title !== (product.title || '')) updates.title = title;
+    if (description !== (product.description || '')) updates.description = description;
+    if (nextPrice !== originalPrice) updates.price = price;
+    if (nextStock !== originalStock) updates.stockQuantity = stockQuantity;
+    if (String(categoryId) !== originalCategoryId) updates.categoryId = categoryId;
+    if (currency !== (product.currency || 'USD')) updates.currency = currency;
+    if (nextAddress !== originalAddress) updates.address = nextAddress;
+    if (nextBarcode !== originalBarcode) updates.barcode = nextBarcode;
+    if (nextLat !== originalLat) updates.latitude = nextLat;
+    if (nextLng !== originalLng) updates.longitude = nextLng;
+
+    if (Object.keys(updates).length === 0) {
+      setSuccessMsg('No changes to save.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const res = await put(`/products/${product.id}`, {
-        title,
-        description,
-        price,
-        stockQuantity,
-        categoryId,
-        currency,
-        address: address || null,
-        latitude: pinnedCoords ? pinnedCoords.lat : null,
-        longitude: pinnedCoords ? pinnedCoords.lng : null,
-        barcode: barcode || null
-      });
+      const res = await put(`/products/${product.id}`, updates);
       if (res.success) {
         setSuccessMsg('Product updated successfully!');
         setTimeout(() => {
@@ -167,7 +188,6 @@ export const EditProductModal = ({ isOpen, onClose, onSuccess, product }) => {
       setIsSubmitting(false);
     }
   };
-
   if (!isOpen || !product) return null;
 
   return (

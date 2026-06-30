@@ -5,6 +5,7 @@ const Category = require('./Category');
 const Product = require('./Product');
 const Order = require('./Order');
 const OrderItem = require('./OrderItem');
+const Review = require('./Review');
 
 // 1. Role <-> User
 Role.hasMany(User, { foreignKey: 'roleId', as: 'users' });
@@ -30,6 +31,12 @@ OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'orderItems' });
 OrderItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
 
+// 7. Product / User <-> Review
+Product.hasMany(Review, { foreignKey: 'productId', as: 'reviews', onDelete: 'CASCADE' });
+Review.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
+User.hasMany(Review, { foreignKey: 'buyerId', as: 'reviews' });
+Review.belongsTo(User, { foreignKey: 'buyerId', as: 'buyer' });
+
 module.exports = {
   sequelize,
   Role,
@@ -37,5 +44,6 @@ module.exports = {
   Category,
   Product,
   Order,
-  OrderItem
+  OrderItem,
+  Review
 };

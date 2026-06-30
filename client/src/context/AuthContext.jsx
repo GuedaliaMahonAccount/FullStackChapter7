@@ -61,8 +61,12 @@ export const AuthProvider = ({ children }) => {
     window.dispatchEvent(new Event('auth-logout'));
   };
 
+  const updateUserBilling = (billingData) => {
+    setUser(prev => prev ? { ...prev, ...billingData } : null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, API_URL }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, API_URL, updateUserBilling }}>
       {children}
     </AuthContext.Provider>
   );

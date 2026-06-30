@@ -40,8 +40,27 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+const updateProfileBilling = async (req, res, next) => {
+  try {
+    const { savedAddress, savedCardLast4, savedCardExpiry } = req.body;
+    const updated = await authService.updateUserProfileBilling(req.user.id, {
+      savedAddress,
+      savedCardLast4,
+      savedCardExpiry
+    });
+    res.status(200).json({
+      success: true,
+      message: 'Billing preferences updated successfully.',
+      data: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
-  getProfile
+  getProfile,
+  updateProfileBilling
 };

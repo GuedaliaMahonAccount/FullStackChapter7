@@ -125,9 +125,22 @@ const toggleBlockUser = async (req, res, next) => {
   }
 };
 
+const getOrders = async (req, res, next) => {
+  try {
+    const orders = await orderService.getAllOrders();
+    res.status(200).json({
+      success: true,
+      data: orders
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   updateStatus,
   getLogs,
   getUsers,
-  toggleBlockUser
+  toggleBlockUser,
+  getOrders
 };

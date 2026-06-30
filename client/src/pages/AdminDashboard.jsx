@@ -31,7 +31,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await get('/orders/buyer');
+      const res = await get('/admin/orders');
       if (res.success) {
         setOrders(res.data);
         if (res.data.length > 0) {
@@ -146,6 +146,23 @@ export const AdminDashboard = () => {
     setStatus(order.status || 'Ready');
     setSuccessMsg('');
     setErrorMsg('');
+  };
+
+  const getAvailableStatusOptions = (currentStatus) => {
+    switch (currentStatus) {
+      case 'Pending':
+        return ['Pending', 'Ready', 'Cancelled'];
+      case 'Ready':
+        return ['Ready', 'Shipped', 'Cancelled'];
+      case 'Shipped':
+        return ['Shipped', 'Collected', 'Cancelled'];
+      case 'Collected':
+        return ['Collected'];
+      case 'Cancelled':
+        return ['Cancelled'];
+      default:
+        return ['Pending', 'Ready', 'Shipped', 'Collected', 'Cancelled'];
+    }
   };
 
   return (
@@ -286,11 +303,9 @@ export const AdminDashboard = () => {
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
                           >
-                            <option value="Pending">Pending</option>
-                            <option value="Ready">Ready</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Collected">Collected</option>
-                            <option value="Cancelled">Cancelled</option>
+                            {getAvailableStatusOptions(selectedOrder.status).map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
                           </select>
                         </div>
 

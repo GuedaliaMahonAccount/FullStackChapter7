@@ -82,12 +82,30 @@ const deleteProductListing = async (req, res, next) => {
 
 const updateProductListing = async (req, res, next) => {
   try {
-    const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode } = req.body;
+    const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode, imageUrl: bodyImageUrl } = req.body;
+    
+    let imageUrl = bodyImageUrl;
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+
     const updated = await productService.updateProduct(
       req.params.id,
       req.user.id,
       req.user.role,
-      { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode },
+      { 
+        title, 
+        description, 
+        price: price !== undefined ? parseFloat(price) : undefined, 
+        stockQuantity: stockQuantity !== undefined ? parseInt(stockQuantity, 10) : undefined, 
+        categoryId, 
+        latitude: latitude !== undefined ? (latitude === null ? null : parseFloat(latitude)) : undefined, 
+        longitude: longitude !== undefined ? (longitude === null ? null : parseFloat(longitude)) : undefined, 
+        address, 
+        currency, 
+        barcode, 
+        imageUrl 
+      },
       req
     );
     res.status(200).json({

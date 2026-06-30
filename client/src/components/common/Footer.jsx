@@ -10,9 +10,9 @@ export const Footer = () => {
     <footer className="site-footer">
       <div className="footer-inner">
         {/* Brand */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="footer-info-col">
           <div className="footer-brand">
-            <Compass size={20} style={{ color: 'var(--secondary)' }} />
+            <Compass size={20} className="footer-brand-logo" />
             <span className="text-gradient">GeoMarket</span>
           </div>
           <p className="footer-copy">
@@ -24,8 +24,8 @@ export const Footer = () => {
         </div>
 
         {/* Stack Badges */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Built with</span>
+        <div className="footer-tech-col">
+          <span className="footer-tech-title">Built with</span>
           <div className="footer-stack">
             {stack.map((tech) => (
               <span key={tech} className="footer-pill">{tech}</span>

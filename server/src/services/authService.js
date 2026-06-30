@@ -91,14 +91,17 @@ const loginUser = async ({ email, password }, req = null) => {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: user.role.name
+      role: user.role.name,
+      savedAddress: user.savedAddress,
+      savedCardLast4: user.savedCardLast4,
+      savedCardExpiry: user.savedCardExpiry
     }
   };
 };
 
 const getUserProfile = async (userId) => {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'email', 'fullName', 'avatarUrl', 'createdAt'],
+    attributes: ['id', 'email', 'fullName', 'avatarUrl', 'createdAt', 'savedAddress', 'savedCardLast4', 'savedCardExpiry'],
     include: [{ model: Role, as: 'role', attributes: ['name'] }]
   });
 
@@ -112,12 +115,38 @@ const getUserProfile = async (userId) => {
     fullName: user.fullName,
     avatarUrl: user.avatarUrl,
     role: user.role.name,
-    createdAt: user.createdAt
+    createdAt: user.createdAt,
+    savedAddress: user.savedAddress,
+    savedCardLast4: user.savedCardLast4,
+    savedCardExpiry: user.savedCardExpiry
+  };
+};
+
+const updateUserProfileBilling = async (userId, { savedAddress, savedCardLast4, savedCardExpiry }) => {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw { statusCode: 404, message: 'User not found.' };
+  }
+  
+  if (savedAddress !== undefined) user.savedAddress = savedAddress;
+  if (savedCardLast4 !== undefined) user.savedCardLast4 = savedCardLast4;
+  if (savedCardExpiry !== undefined) user.savedCardExpiry = savedCardExpiry;
+  
+  await user.save();
+  
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    savedAddress: user.savedAddress,
+    savedCardLast4: user.savedCardLast4,
+    savedCardExpiry: user.savedCardExpiry
   };
 };
 
 module.exports = {
   registerUser,
   loginUser,
-  getUserProfile
+  getUserProfile,
+  updateUserProfileBilling
 };

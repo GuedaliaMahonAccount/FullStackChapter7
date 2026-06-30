@@ -24,62 +24,62 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
-          <Router>
-            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-              <Navbar onToggleCart={() => setIsCartOpen(!isCartOpen)} />
-              
-              <div style={{ flex: 1 }}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/products/:id" element={<ProductDetail />} />
-                  <Route path="/api-info" element={<ApiInfo />} />
-                  
-                  {/* Protected Routes */}
-                  <Route 
-                    path="/dashboard" 
-                    element={
-                      <ProtectedRoute>
-                        <SellerDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/cart" 
-                    element={
-                      <ProtectedRoute>
-                        <Cart />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/orders" 
-                    element={
-                      <ProtectedRoute>
-                        <OrderStatus />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/admin" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                </Routes>
-              </div>
+        <Router>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <Navbar onToggleCart={() => setIsCartOpen(!isCartOpen)} />
 
-              <Footer />
-              
-              <CartDrawer 
-                isOpen={isCartOpen} 
-                onClose={() => setIsCartOpen(false)} 
-              />
+            <div style={{ flex: 1 }}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/api-info" element={<ApiInfo />} />
+
+                {/* Protected Routes */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <SellerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/cart"
+                  element={
+                    <ProtectedRoute>
+                      <Cart />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <OrderStatus />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
             </div>
-          </Router>
+
+            <Footer />
+
+            <CartDrawer
+              isOpen={isCartOpen}
+              onClose={() => setIsCartOpen(false)}
+            />
+          </div>
+        </Router>
       </CartProvider>
     </AuthProvider>
   );

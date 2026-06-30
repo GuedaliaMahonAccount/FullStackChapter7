@@ -42,7 +42,7 @@ export const Navbar = ({ onToggleCart }) => {
 
           {/* Brand */}
           <Link to="/" className="nav-brand">
-            <Compass size={24} style={{ color: 'var(--secondary)' }} />
+            <Compass size={24} className="nav-brand-logo" />
             <span className="nav-brand-text text-gradient">GeoMarket</span>
           </Link>
 
@@ -78,8 +78,7 @@ export const Navbar = ({ onToggleCart }) => {
             {user?.role === 'admin' && (
               <Link
                 to="/admin"
-                className={`nav-link${isActive('/admin') ? ' active' : ''}`}
-                style={{ color: 'var(--accent)' }}
+                className={`nav-link${isActive('/admin') ? ' active' : ''} nav-admin-link`}
               >
                 <Shield size={16} />
                 Admin
@@ -87,41 +86,30 @@ export const Navbar = ({ onToggleCart }) => {
             )}
 
             {/* Cart Button */}
-            <button
-              id="navbar-cart-btn"
-              onClick={onToggleCart}
-              className="btn btn-secondary btn-sm"
-              style={{ position: 'relative', gap: '7px', padding: '8px 14px' }}
-            >
-              <ShoppingCart size={16} style={{ color: 'var(--primary-light)' }} />
-              <span>Cart</span>
-              {cartCount > 0 && (
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'var(--primary)',
-                  color: '#fff',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '50%',
-                  lineHeight: 1,
-                }}>
-                  {cartCount}
-                </span>
-              )}
-            </button>
+            {user && (
+              <button
+                id="navbar-cart-btn"
+                onClick={onToggleCart}
+                className="btn btn-secondary btn-sm nav-cart-btn"
+              >
+                <ShoppingCart size={16} className="nav-cart-icon" />
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="nav-cart-badge">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Auth Area */}
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '10px', borderLeft: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <div className="nav-auth-area">
+                <div className="nav-user-info">
+                  <span className="nav-user-name">
                     {user.fullName}
                   </span>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>
+                  <span className="nav-user-role">
                     {user.role}
                   </span>
                 </div>
@@ -135,7 +123,7 @@ export const Navbar = ({ onToggleCart }) => {
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '10px', borderLeft: '1px solid var(--border)' }}>
+              <div className="nav-auth-unauthenticated">
                 <Link to="/login" className="btn btn-ghost btn-sm">Login</Link>
                 <Link to="/register" className="btn btn-primary btn-sm">Sign Up</Link>
               </div>
@@ -172,36 +160,37 @@ export const Navbar = ({ onToggleCart }) => {
         )}
 
         {user?.role === 'admin' && (
-          <Link to="/admin" className="nav-link" style={{ color: 'var(--accent)' }}>
+          <Link to="/admin" className="nav-link nav-admin-link">
             <Shield size={18} /> Admin Dashboard
           </Link>
         )}
 
-        <button
-          onClick={() => { onToggleCart(); setMobileOpen(false); }}
-          className="nav-link"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', justifyContent: 'flex-start', color: 'var(--text-secondary)' }}
-        >
-          <ShoppingCart size={18} />
-          Cart {cartCount > 0 && `(${cartCount})`}
-        </button>
+        {user && (
+          <button
+            onClick={() => { onToggleCart(); setMobileOpen(false); }}
+            className="nav-link mobile-nav-cart-btn"
+          >
+            <ShoppingCart size={18} />
+            Cart {cartCount > 0 && `(${cartCount})`}
+          </button>
+        )}
 
         {/* Mobile Auth */}
-        <div style={{ borderTop: '1px solid var(--border)', marginTop: '8px', paddingTop: '12px' }}>
+        <div className="mobile-nav-auth-divider">
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}>
+            <div className="mobile-nav-user-profile">
               <div>
-                <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{user.fullName}</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{user.role}</p>
+                <p className="mobile-nav-user-title">{user.fullName}</p>
+                <p className="mobile-nav-user-subtitle">{user.role}</p>
               </div>
-              <button onClick={handleLogout} className="btn btn-danger btn-sm" style={{ gap: '6px' }}>
+              <button onClick={handleLogout} className="btn btn-danger btn-sm mobile-nav-logout-btn">
                 <LogOut size={14} /> Logout
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: '10px', padding: '0 4px' }}>
-              <Link to="/login" className="btn btn-secondary" style={{ flex: 1 }}>Login</Link>
-              <Link to="/register" className="btn btn-primary" style={{ flex: 1 }}>Sign Up</Link>
+            <div className="mobile-nav-unauth-grid">
+              <Link to="/login" className="btn btn-secondary mobile-nav-unauth-btn">Login</Link>
+              <Link to="/register" className="btn btn-primary mobile-nav-unauth-btn">Sign Up</Link>
             </div>
           )}
         </div>

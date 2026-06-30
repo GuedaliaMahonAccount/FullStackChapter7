@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Product, User, Category } = require('../models/sql');
+const { Product, User, Category, Review } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
 
 const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude, address, currency, barcode }, req = null) => {
@@ -68,7 +68,8 @@ const getAllProducts = async (filters = {}) => {
     where: whereClause,
     include: [
       { model: User, as: 'seller', attributes: ['id', 'fullName', 'email'] },
-      { model: Category, as: 'category', attributes: ['id', 'name'] }
+      { model: Category, as: 'category', attributes: ['id', 'name'] },
+      { model: Review, as: 'reviews', attributes: ['rating'] }
     ],
     order: [['createdAt', 'DESC']]
   });
@@ -134,7 +135,7 @@ const updateProduct = async (productId, sellerId, userRole, updates, req = null)
     throw { statusCode: 403, message: 'Unauthorized: You are not the owner of this product listing.' };
   }
 
-  const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode } = updates;
+  const { title, description, price, stockQuantity, categoryId, latitude, longitude, address, currency, barcode, imageUrl } = updates;
 
   if (categoryId) {
     const category = await Category.findByPk(categoryId);
@@ -152,6 +153,7 @@ const updateProduct = async (productId, sellerId, userRole, updates, req = null)
     ...(address !== undefined && { address: address || null }),
     ...(currency !== undefined && { currency }),
     ...(barcode !== undefined && { barcode: barcode || null }),
+    ...(imageUrl !== undefined && { imageUrl }),
   });
 
   await logEvent({

@@ -45,6 +45,21 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: false,
     field: 'is_blocked'
+  },
+  savedAddress: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'saved_address'
+  },
+  savedCardLast4: {
+    type: DataTypes.STRING(4),
+    allowNull: true,
+    field: 'saved_card_last4'
+  },
+  savedCardExpiry: {
+    type: DataTypes.STRING(5),
+    allowNull: true,
+    field: 'saved_card_expiry'
   }
 }, {
   tableName: 'users',

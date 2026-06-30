@@ -10,5 +10,6 @@ router.post('/login', validateFields(['email', 'password']), authController.logi
 
 // Protected routes
 router.get('/profile', verifyToken, authController.getProfile);
+router.patch('/profile/billing', verifyToken, authController.updateProfileBilling);
 
 module.exports = router;

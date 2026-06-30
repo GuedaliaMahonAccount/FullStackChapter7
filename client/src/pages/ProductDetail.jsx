@@ -39,13 +39,53 @@ export const ProductDetail = () => {
   const [osrmData, setOsrmData]                   = useState(null);
   const [osrmLoading, setOsrmLoading]             = useState(false);
 
+  // Reviews states
+  const [reviewsData, setReviewsData] = useState({ reviews: [], count: 0, average: 0 });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+
   // Barcode specifications states
   const [barcodeData, setBarcodeData]             = useState(null);
   const [barcodeLoading, setBarcodeLoading]       = useState(false);
 
-  const { get }      = useFetch();
+  const { get, post }      = useFetch();
   const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
   const { user }     = useAuth();
+
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const res = await get(`/reviews/product/${id}`);
+      if (res.success) {
+        setReviewsData(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching product reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingReview(true);
+    setReviewError('');
+    try {
+      const res = await post('/reviews', { rating, comment, productId: id });
+      if (res.success) {
+        setComment('');
+        setRating(5);
+        fetchReviews(); // Reload reviews list
+      }
+    } catch (err) {
+      setReviewError(err.message || 'Failed to submit review.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   // Fetch Frankfurter conversion to ILS automatically
   useEffect(() => {
@@ -144,6 +184,7 @@ export const ProductDetail = () => {
       }
     };
     fetchProduct();
+    fetchReviews();
   }, [id]);
 
   // Sync local qty state with cart quantity on load
@@ -153,6 +194,17 @@ export const ProductDetail = () => {
       setQty(itemInCart ? itemInCart.quantity : 1);
     }
   }, [product, cart.length]);
+
+  // Pre-fill user review details if they already submitted one
+  useEffect(() => {
+    if (user && reviewsData?.reviews) {
+      const myReview = reviewsData.reviews.find(r => r.buyerId === user.id || r.buyer_id === user.id);
+      if (myReview) {
+        setRating(myReview.rating);
+        setComment(myReview.comment || '');
+      }
+    }
+  }, [reviewsData, user]);
 
   // Fetch weather data from Open-Meteo on product load
   useEffect(() => {
@@ -590,6 +642,22 @@ export const ProductDetail = () => {
               {product.title}
             </h1>
 
+            {(reviewsData?.count || 0) > 0 ? (
+              <div className="product-rating-summary">
+                <span style={{ color: '#fbbf24', display: 'flex', gap: '2px', fontSize: '1rem' }}>
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <span key={idx} style={{ opacity: idx < Math.round(reviewsData?.average || 0) ? 1 : 0.25 }}>★</span>
+                  ))}
+                </span>
+                <span style={{ fontWeight: 700, color: '#fff' }}>{reviewsData?.average || 0}</span>
+                <span style={{ color: 'var(--text-muted)' }}>({reviewsData?.count || 0} reviews)</span>
+              </div>
+            ) : (
+              <div className="product-rating-summary-empty">
+                No reviews yet
+              </div>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--secondary)', fontFamily: 'var(--font-heading)' }}>
                 {formatPrice(product.price, product.currency)}
@@ -664,6 +732,18 @@ export const ProductDetail = () => {
               }
               const cartItem = cart.find(item => item.id === product.id);
               const currentQty = cartItem ? cartItem.quantity : 0;
+
+              if (product.stockQuantity <= 0) {
+                return (
+                  <button
+                    className="btn btn-lg btn-primary"
+                    style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+                    disabled
+                  >
+                    <ShoppingCart size={18} /> Add to Cart
+                  </button>
+                );
+              }
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -804,7 +884,7 @@ export const ProductDetail = () => {
                 Seller
               </p>
               <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {product.seller?.fullName}
+                {user && product.seller && user.id === product.seller.id ? 'Me (אני)' : product.seller?.fullName}
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {product.seller?.email}
@@ -896,6 +976,129 @@ export const ProductDetail = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Reviews & Ratings Section */}
+      <div className="divider reviews-section-divider" />
+      
+      <div className="reviews-section-container">
+        <h3 className="section-title" style={{ fontSize: '1.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          ⭐ Ratings & Reviews ({reviewsData?.count || 0})
+        </h3>
+
+        <div className="reviews-layout-grid">
+          
+          {/* Reviews List */}
+          <div className="reviews-list-column">
+            {(!reviewsData?.reviews || reviewsData.reviews.length === 0) ? (
+              <div className="glass-panel-static" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                No reviews yet for this product. Be the first to review!
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {(reviewsData?.reviews || []).map((rev) => (
+                  <div 
+                    key={rev.id} 
+                    className="glass-panel-static review-item-card"
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                          {rev.buyer?.fullName || 'Anonymous'}
+                        </span>
+                        <span style={{ color: '#fbbf24', fontSize: '0.9rem' }}>
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <span key={idx} style={{ opacity: idx < rev.rating ? 1 : 0.2 }}>★</span>
+                          ))}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {rev.comment && (
+                      <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                        {rev.comment}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Write a Review Form */}
+          <div className="reviews-form-column">
+            {user ? (
+              (() => {
+                const alreadyReviewed = (reviewsData?.reviews || []).some(r => r.buyerId === user.id || r.buyer_id === user.id);
+                return (
+                  <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#fff' }}>
+                        {alreadyReviewed ? 'Edit Your Review' : 'Leave a Review'}
+                      </h4>
+                      {alreadyReviewed && (
+                        <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                          ✓ Reviewed
+                        </span>
+                      )}
+                    </div>
+                    
+                    {reviewError && (
+                      <div className="alert alert-error" style={{ padding: '8px 12px', fontSize: '0.78rem' }}>
+                        <span>{reviewError}</span>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Rating</label>
+                        <div className="review-stars-interactive">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span 
+                              key={star} 
+                              onClick={() => setRating(star)}
+                              style={{ opacity: star <= rating ? 1 : 0.25 }}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" htmlFor="review-comment-textarea">Comments</label>
+                        <textarea
+                          id="review-comment-textarea"
+                          className="form-input"
+                          rows={3}
+                          placeholder="What did you think of the item? Write your review here..."
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', padding: '10px', fontSize: '0.85rem' }}
+                        disabled={isSubmittingReview}
+                      >
+                        {isSubmittingReview ? 'Submitting...' : alreadyReviewed ? 'Update Review' : 'Submit Review'}
+                      </button>
+                    </form>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '0.85rem' }}>Please <a href="/login" style={{ color: 'var(--primary-light)', textDecoration: 'underline', fontWeight: 600 }}>log in</a> to share your review and rate this product.</p>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

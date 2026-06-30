@@ -136,6 +136,23 @@ export const OrdersManager = () => {
     );
   }
 
+  const getAvailableStatusOptions = (currentStatus) => {
+    switch (currentStatus) {
+      case 'Pending':
+        return ['Pending', 'Ready', 'Cancelled'];
+      case 'Ready':
+        return ['Ready', 'Shipped', 'Cancelled'];
+      case 'Shipped':
+        return ['Shipped', 'Collected', 'Cancelled'];
+      case 'Collected':
+        return ['Collected'];
+      case 'Cancelled':
+        return ['Cancelled'];
+      default:
+        return ['Pending', 'Ready', 'Shipped', 'Collected', 'Cancelled'];
+    }
+  };
+
   return (
     <div className={`sidebar-layout ${selectedOrderId ? 'order-selected' : 'no-order-selected'}`}>
       
@@ -415,11 +432,15 @@ export const OrdersManager = () => {
                     onChange={(e) => setStatus(e.target.value)}
                     style={{ background: 'var(--bg-card)' }}
                   >
-                    <option value="Pending">Pending (Not Started)</option>
-                    <option value="Ready">Ready (Prepared for shipment)</option>
-                    <option value="Shipped">Shipped (In transit)</option>
-                    <option value="Collected">Collected (Delivered / Handed over)</option>
-                    <option value="Cancelled">Cancelled (Aborted)</option>
+                    {getAvailableStatusOptions(orderDetails.tracking?.current_status || 'Pending').map(opt => (
+                      <option key={opt} value={opt}>
+                        {opt === 'Pending' ? 'Pending (Not Started)' :
+                         opt === 'Ready' ? 'Ready (Prepared for shipment)' :
+                         opt === 'Shipped' ? 'Shipped (In transit)' :
+                         opt === 'Collected' ? 'Collected (Delivered / Handed over)' :
+                         opt === 'Cancelled' ? 'Cancelled (Aborted)' : opt}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

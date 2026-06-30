@@ -182,11 +182,40 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
     throw { statusCode: 404, message: 'Order not found.' };
   }
 
+  let currentStatus = 'Pending';
   let trackingDoc = null;
   if (mongoose.connection.readyState === 1) {
     try {
       trackingDoc = await OrderTracking.findOne({ order_id: orderId });
-      
+      if (trackingDoc && trackingDoc.current_status) {
+        currentStatus = trackingDoc.current_status;
+      }
+    } catch (err) {
+      console.error('Error fetching MongoDB order status:', err.message);
+    }
+  }
+
+  // Validate progressive flow transitions
+  const statusOrder = ['Pending', 'Ready', 'Shipped', 'Collected'];
+  
+  if (currentStatus === 'Cancelled') {
+    throw { statusCode: 400, message: 'Cannot modify a cancelled order.' };
+  }
+  if (currentStatus === 'Collected' && status !== 'Collected') {
+    throw { statusCode: 400, message: 'Cannot modify a collected order.' };
+  }
+  
+  if (status !== 'Cancelled') {
+    const currIndex = statusOrder.indexOf(currentStatus);
+    const nextIndex = statusOrder.indexOf(status);
+    
+    if (currIndex !== -1 && nextIndex !== -1 && nextIndex < currIndex) {
+      throw { statusCode: 400, message: `Invalid status transition from ${currentStatus} to ${status}. Statuses can only move forward.` };
+    }
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    try {
       if (!trackingDoc) {
         trackingDoc = new OrderTracking({ order_id: orderId });
       }
@@ -285,10 +314,39 @@ const getSellerOrders = async (sellerId) => {
   return Array.from(ordersMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
+const getAllOrders = async () => {
+  const orders = await Order.findAll({
+    order: [['createdAt', 'DESC']]
+  });
+
+  const ordersWithStatus = [];
+  for (const order of orders) {
+    let currentStatus = 'Pending';
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const tracking = await OrderTracking.findOne({ order_id: order.id }, { current_status: 1 });
+        if (tracking) currentStatus = tracking.current_status;
+      } catch (err) {
+        // ignore
+      }
+    }
+    ordersWithStatus.push({
+      id: order.id,
+      totalPrice: order.totalPrice,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      status: currentStatus
+    });
+  }
+
+  return ordersWithStatus;
+};
+
 module.exports = {
   placeOrder,
   getOrderDetails,
   getBuyerOrders,
   updateOrderStatus,
-  getSellerOrders
+  getSellerOrders,
+  getAllOrders
 };

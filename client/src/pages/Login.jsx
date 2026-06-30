@@ -38,62 +38,60 @@ export const Login = () => {
       <div className="auth-card">
 
         {/* Brand */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div className="auth-header">
           <div className="auth-brand-icon">
-            <Compass size={30} style={{ color: 'var(--secondary)' }} />
+            <Compass size={30} className="auth-logo-icon" />
           </div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, marginBottom: '6px' }}>Welcome Back</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <h1 className="auth-title">Welcome Back</h1>
+          <p className="auth-subtitle">
             Sign in to continue trading on GeoMarket
           </p>
         </div>
 
         {/* Error */}
         {errorMsg && (
-          <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-            <ShieldAlert size={16} style={{ flexShrink: 0 }} />
+          <div className="alert alert-error auth-alert">
+            <ShieldAlert size={16} className="auth-alert-icon" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label className="form-label" htmlFor="login-email">Email Address</label>
-            <div style={{ position: 'relative' }}>
+            <div className="auth-input-container">
               <Mail
                 size={16}
-                style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
+                className="auth-input-icon"
               />
               <input
                 id="login-email"
                 type="email"
-                className="form-input"
+                className="form-input auth-input-field"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                style={{ paddingLeft: '44px' }}
               />
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '28px' }}>
+          <div className="form-group auth-form-group-spaced">
             <label className="form-label" htmlFor="login-password">Password</label>
-            <div style={{ position: 'relative' }}>
+            <div className="auth-input-container">
               <Lock
                 size={16}
-                style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
+                className="auth-input-icon"
               />
               <input
                 id="login-password"
                 type="password"
-                className="form-input"
+                className="form-input auth-input-field"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                style={{ paddingLeft: '44px' }}
               />
             </div>
           </div>
@@ -101,8 +99,7 @@ export const Login = () => {
           <button
             id="login-submit-btn"
             type="submit"
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+            className="btn btn-primary btn-lg auth-submit-btn"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -117,11 +114,11 @@ export const Login = () => {
         </form>
 
         {/* Footer link */}
-        <div className="divider-text" style={{ margin: '24px 0' }}>or</div>
+        <div className="divider-text auth-divider-text">or</div>
 
-        <p style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+        <p className="auth-footer-text">
           Don't have an account?{' '}
-          <Link to="/register" style={{ color: 'var(--primary-light)', fontWeight: 700 }}>
+          <Link to="/register" className="auth-footer-link">
             Create one
           </Link>
         </p>

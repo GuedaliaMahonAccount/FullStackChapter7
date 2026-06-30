@@ -18,7 +18,7 @@ router.get('/:id', productController.getProductDetail);
 
 // Protected routes (Only buyers/sellers can upload items)
 router.post('/', verifyToken, upload.single('image'), productController.createProduct);
-router.put('/:id', verifyToken, productController.updateProductListing);
+router.put('/:id', verifyToken, upload.single('image'), productController.updateProductListing);
 router.delete('/:id', verifyToken, productController.deleteProductListing);
 
 module.exports = router;
