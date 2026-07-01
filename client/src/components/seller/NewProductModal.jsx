@@ -47,7 +47,7 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
     if (!isOpen) return;
     const fetchCats = async () => {
       try {
-        const res = await get('/categories');
+        const res = await get('/categories', { ttl: Infinity }); // Cached infinitely
         if (res.success) {
           setCategories(res.data);
           if (res.data.length > 0) setCategoryId(res.data[0].id);
@@ -159,39 +159,49 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
     if (!query) return;
     setIsPexelsLoading(true);
     setErrorMsg('');
-    
-    const actualKey = pexelsApiKey || import.meta.env.VITE_PEXELS_API_KEY;
-    if (!actualKey) {
-      // Fallback placeholder images if no API key is provided
-      const fallbackResults = [
-        { id: 1, src: { medium: `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200` }, photographer: 'Unsplash Placeholder' },
-        { id: 2, src: { medium: `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200` }, photographer: 'Unsplash Placeholder' },
-        { id: 3, src: { medium: `https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200` }, photographer: 'Unsplash Placeholder' },
-        { id: 4, src: { medium: `https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200` }, photographer: 'Unsplash Placeholder' },
-        { id: 5, src: { medium: `https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200` }, photographer: 'Unsplash Placeholder' },
-        { id: 6, src: { medium: `https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1560343090-f0409e92791a?w=1200` }, photographer: 'Unsplash Placeholder' }
-      ];
-      setTimeout(() => {
-        setPexelsResults(fallbackResults);
+
+    // If user provided their own key locally, call Pexels directly
+    if (pexelsApiKey) {
+      try {
+        const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=9`, {
+          headers: { Authorization: pexelsApiKey }
+        });
+        if (!res.ok) {
+          throw new Error(`Pexels API error: status ${res.status}`);
+        }
+        const data = await res.json();
+        if (data && data.photos) {
+          setPexelsResults(data.photos);
+        }
+      } catch (err) {
+        console.error('Error searching Pexels directly:', err);
+        setErrorMsg('Failed to search Pexels. Please verify your API key.');
+      } finally {
         setIsPexelsLoading(false);
-      }, 600);
+      }
       return;
     }
 
+    // Otherwise, request securely through our backend proxy
     try {
-      const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=9`, {
-        headers: { Authorization: actualKey }
-      });
-      if (!res.ok) {
-        throw new Error(`Pexels API error: status ${res.status}`);
-      }
-      const data = await res.json();
-      if (data && data.photos) {
-        setPexelsResults(data.photos);
+      const res = await get(`/products/pexels-search?query=${encodeURIComponent(query)}`, { ttl: Infinity }); // Cached infinitely
+      if (res.success && res.data && res.data.photos) {
+        setPexelsResults(res.data.photos);
+      } else {
+        // Fallback to placeholder images if backend doesn't return photos
+        const fallbackResults = [
+          { id: 1, src: { medium: `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200` }, photographer: 'Unsplash Placeholder' },
+          { id: 2, src: { medium: `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200` }, photographer: 'Unsplash Placeholder' },
+          { id: 3, src: { medium: `https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200` }, photographer: 'Unsplash Placeholder' },
+          { id: 4, src: { medium: `https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200` }, photographer: 'Unsplash Placeholder' },
+          { id: 5, src: { medium: `https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200` }, photographer: 'Unsplash Placeholder' },
+          { id: 6, src: { medium: `https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60`, large: `https://images.unsplash.com/photo-1560343090-f0409e92791a?w=1200` }, photographer: 'Unsplash Placeholder' }
+        ];
+        setPexelsResults(fallbackResults);
       }
     } catch (err) {
-      console.error('Error searching Pexels:', err);
-      setErrorMsg('Failed to search Pexels. Please verify your API key.');
+      console.error('Error searching Pexels via proxy:', err);
+      setErrorMsg('Failed to search Pexels via server.');
     } finally {
       setIsPexelsLoading(false);
     }
@@ -458,27 +468,27 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
           <X size={18} />
         </button>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)', fontWeight: 900 }}>
+        <div className="new-product-modal-style-076">
+          <h2 className="new-product-modal-style-075">
             Create a New <span className="text-gradient">Product</span>
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+          <p className="new-product-modal-style-074">
             Sell your items to local buyers in your neighborhood.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="alert alert-error" style={{ marginBottom: '16px' }}>
-            <Info size={16} style={{ flexShrink: 0 }} />
+          <div className="alert alert-error new-product-modal-style-073" >
+            <Info size={16} className="new-product-modal-style-072" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="split-layout" style={{ alignItems: 'start' }}>
+        <form onSubmit={handleSubmit} className="split-layout new-product-modal-style-071" >
 
           {/* Left: Fields */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="new-product-modal-style-070">
+            <h3 className="new-product-modal-style-069">
               <Tag size={15} /> Product Details
             </h3>
 
@@ -495,7 +505,7 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
+            <div className="new-product-modal-style-068">
               <div className="form-group">
                 <label className="form-label" htmlFor="modal-sell-price">Price</label>
                 <input
@@ -553,56 +563,56 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="modal-sell-barcode" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label new-product-modal-style-067" htmlFor="modal-sell-barcode" >
                 <span>Barcode (EAN/UPC)</span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Autofills title & description</span>
+                <span className="new-product-modal-style-066">Autofills title & description</span>
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="new-product-modal-style-065">
                 <input
                   id="modal-sell-barcode"
                   type="text"
-                  className="form-input"
+                  className="form-input new-product-modal-style-064"
                   placeholder="e.g. 3017300045601 or 9780132350884"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
-                  style={{ flex: 1 }}
+                  
                 />
                 <button
                   type="button"
                   onClick={handleBarcodeAutofill}
                   disabled={isBarcodeLoading || !barcode.trim()}
-                  className="btn btn-secondary btn-sm"
-                  style={{ height: '38px', padding: '0 12px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  className="btn btn-secondary btn-sm new-product-modal-style-063"
+                  
                 >
                   {isBarcodeLoading ? 'Searching...' : 'Autofill'}
                 </button>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', alignItems: 'center' }}>
+              <div className="new-product-modal-style-062">
                 <div>
                   {barcodeStatus === 'success' && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--status-completed)' }}>✓ Metadata auto-populated successfully!</span>
+                    <span className="new-product-modal-style-061">✓ Metadata auto-populated successfully!</span>
                   )}
                   {barcodeStatus === 'error' && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--status-cancelled)' }}>✗ Failed to autofill from barcode</span>
+                    <span className="new-product-modal-style-060">✗ Failed to autofill from barcode</span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowBarcodeSearch(!showBarcodeSearch)}
-                  style={{ background: 'none', border: 'none', color: 'var(--secondary)', fontSize: '0.75rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                  className="new-product-modal-style-059"
                 >
                   {showBarcodeSearch ? 'Close Search Panel' : 'Search barcode by name'}
                 </button>
               </div>
 
               {showBarcodeSearch && (
-                <div className="glass-panel-static animate-in" style={{ padding: '14px', borderRadius: 'var(--radius-sm)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Find Barcode in Catalog</span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="glass-panel-static animate-in new-product-modal-style-058" >
+                  <span className="new-product-modal-style-057">Find Barcode in Catalog</span>
+                  <div className="new-product-modal-style-056">
                     <input
                       type="text"
-                      className="form-input"
-                      style={{ height: '32px', fontSize: '0.8rem' }}
+                      className="form-input new-product-modal-style-055"
+                      
                       placeholder="Enter product name (e.g. Nutella, Clean Code)"
                       value={barcodeSearchQuery}
                       onChange={(e) => setBarcodeSearchQuery(e.target.value)}
@@ -612,15 +622,15 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                       type="button"
                       onClick={handleSearchBarcodeByName}
                       disabled={isBarcodeSearching || !barcodeSearchQuery.trim()}
-                      className="btn btn-primary btn-sm"
-                      style={{ height: '32px', padding: '0 12px', fontSize: '0.78rem' }}
+                      className="btn btn-primary btn-sm new-product-modal-style-054"
+                      
                     >
                       {isBarcodeSearching ? 'Searching...' : 'Search'}
                     </button>
                   </div>
 
                   {barcodeSearchResults.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto', marginTop: '4px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px' }}>
+                    <div className="new-product-modal-style-053">
                       {barcodeSearchResults.map((result, idx) => (
                         <div
                           key={idx}
@@ -698,12 +708,12 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                               setIsBarcodeLoading(false);
                             }
                           }}
-                          style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px', borderRadius: '4px', cursor: 'pointer', background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background var(--transition-fast)', textAlign: 'left' }}
+                          className="new-product-modal-style-052"
                           onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                           onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.01)'}
                         >
-                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>{result.title}</span>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          <span className="new-product-modal-style-051">{result.title}</span>
+                          <div className="new-product-modal-style-050">
                             <span>{result.subtext}</span>
                             <span>{result.barcode}</span>
                           </div>
@@ -726,7 +736,7 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                 >
                   {isGeneratingDesc ? (
                     <>
-                      <span className="spinner spinner-xs" style={{ width: '10px', height: '10px', borderWidth: '1.5px', borderTopColor: 'transparent', display: 'inline-block' }} />
+                      <span className="spinner spinner-xs new-product-modal-style-049"  />
                       Generating...
                     </>
                   ) : (
@@ -746,10 +756,10 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             {/* Image Selection Option: File upload vs Pexels search */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="form-group new-product-modal-style-048" >
+              <label className="form-label new-product-modal-style-047" >
                 <span>Product Image</span>
-                <span style={{ fontSize: '0.75rem', display: 'flex', gap: '8px' }}>
+                <span className="new-product-modal-style-046">
                   <button
                     type="button"
                     style={{
@@ -764,7 +774,7 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                   >
                     Local File
                   </button>
-                  <span style={{ color: 'var(--border)' }}>|</span>
+                  <span className="new-product-modal-style-045">|</span>
                   <button
                     type="button"
                     style={{
@@ -811,31 +821,23 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-xs)' }}
+                        className="new-product-modal-style-044"
                       />
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <p style={{
-                          fontWeight: 600,
-                          fontSize: '0.85rem',
-                          color: 'var(--text-primary)',
-                          marginBottom: '2px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                      <div className="new-product-modal-style-043">
+                        <p className="new-product-modal-style-042">
                           {imageFile?.name}
                         </p>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--primary-light)' }}>Click to change</p>
+                        <p className="new-product-modal-style-041">Click to change</p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div style={{ background: 'var(--primary-glow)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
-                        <Upload size={20} style={{ color: 'var(--primary-light)' }} />
+                      <div className="new-product-modal-style-040">
+                        <Upload size={20} className="new-product-modal-style-039" />
                       </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '2px' }}>Drop image or click to upload</p>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PNG, JPG, WEBP up to 10 MB</p>
+                      <div className="new-product-modal-style-038">
+                        <p className="new-product-modal-style-037">Drop image or click to upload</p>
+                        <p className="new-product-modal-style-036">PNG, JPG, WEBP up to 10 MB</p>
                       </div>
                     </>
                   )}
@@ -844,22 +846,22 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => handleImageChange(e.target.files[0])}
-                    style={{ display: 'none' }}
+                    className="new-product-modal-style-035"
                   />
                 </label>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px' }}>
+                <div className="new-product-modal-style-034">
                   {/* API Key setting (interactive setup!) */}
                   {!import.meta.env.VITE_PEXELS_API_KEY && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        Configure <a href="https://www.pexels.com/api/" target="_blank" rel="noreferrer" style={{ color: 'var(--primary-light)', textDecoration: 'underline' }}>Pexels API Key</a> for real search:
+                    <div className="new-product-modal-style-033">
+                      <span className="new-product-modal-style-032">
+                        Optional: Override with custom <a href="https://www.pexels.com/api/" target="_blank" rel="noreferrer" className="new-product-modal-style-031">Pexels API Key</a>:
                       </span>
                       <input
                         type="password"
                         placeholder="Paste Pexels API Key here..."
-                        className="form-input"
-                        style={{ height: '28px', fontSize: '0.75rem', padding: '4px 8px' }}
+                        className="form-input new-product-modal-style-030"
+                        
                         value={pexelsApiKey}
                         onChange={(e) => handleSavePexelsKey(e.target.value)}
                       />
@@ -867,19 +869,19 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                   )}
 
                   {/* Search query box */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div className="new-product-modal-style-029">
                     <input
                       type="text"
-                      className="form-input"
-                      style={{ height: '34px', fontSize: '0.82rem' }}
+                      className="form-input new-product-modal-style-028"
+                      
                       placeholder="Search items, e.g. bicycle..."
                       value={pexelsQuery}
                       onChange={(e) => setPexelsQuery(e.target.value)}
                     />
                     <button
                       type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '0 12px', height: '34px', fontSize: '0.8rem' }}
+                      className="btn btn-secondary new-product-modal-style-027"
+                      
                       onClick={() => searchPexelsImages(pexelsQuery)}
                     >
                       Search
@@ -888,12 +890,12 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
 
                   {/* Search results */}
                   {isPexelsLoading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
+                    <div className="new-product-modal-style-026">
                       <div className="spinner spinner-sm" />
                     </div>
                   ) : (
                     <>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
+                      <div className="new-product-modal-style-025">
                         {pexelsResults.map((photo) => (
                           <div
                             key={photo.id}
@@ -910,10 +912,10 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                             <img
                               src={photo.src.medium}
                               alt={photo.photographer}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              className="new-product-modal-style-024"
                             />
                             {selectedPexelsUrl === photo.src.large && (
-                              <div style={{ position: 'absolute', top: '2px', right: '2px', background: 'var(--primary)', color: 'white', borderRadius: '50%', padding: '2px' }}>
+                              <div className="new-product-modal-style-023">
                                 <CheckCircle size={10} />
                               </div>
                             )}
@@ -922,9 +924,9 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                       </div>
 
                       {selectedPexelsUrl && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          <img src={selectedPexelsUrl} style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px' }} alt="Selected" />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="new-product-modal-style-022">
+                          <img src={selectedPexelsUrl} className="new-product-modal-style-021" alt="Selected" />
+                          <span className="new-product-modal-style-020">
                             Pexels image selected!
                           </span>
                         </div>
@@ -937,26 +939,26 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
 
           {/* Right: Map + Submit */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MapPin size={15} style={{ color: 'var(--secondary)' }} />
+          <div className="new-product-modal-style-019">
+            <div className="new-product-modal-style-018">
+              <h3 className="new-product-modal-style-017">
+                <MapPin size={15} className="new-product-modal-style-016" />
                 Sale Location & Address
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '0.06em', marginLeft: 'auto' }}>
+                <span className="new-product-modal-style-015">
                   Optional
                 </span>
               </h3>
 
               {/* Photon Autocomplete Address Search Input */}
-              <div style={{ position: 'relative' }}>
+              <div className="new-product-modal-style-014">
                 <label className="form-label" htmlFor="modal-sell-address">Address Search (Photon API)</label>
-                <div style={{ position: 'relative' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <div className="new-product-modal-style-013">
+                  <Search size={14} className="new-product-modal-style-012" />
                   <input
                     id="modal-sell-address"
                     type="text"
-                    className="form-input"
-                    style={{ paddingLeft: '32px', height: '36px', fontSize: '0.85rem' }}
+                    className="form-input new-product-modal-style-011"
+                    
                     placeholder="Type address, e.g. Dizengoff 100, Tel Aviv..."
                     value={addressSearchQuery}
                     onChange={(e) => {
@@ -965,30 +967,15 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
                     }}
                   />
                   {isAddressLoading && (
-                    <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>
-                      <span className="spinner spinner-xs" style={{ width: '12px', height: '12px' }} />
+                    <div className="new-product-modal-style-010">
+                      <span className="spinner spinner-xs new-product-modal-style-009"  />
                     </div>
                   )}
                 </div>
 
                 {/* Suggestions Dropdown */}
                 {addressSuggestions.length > 0 && (
-                  <ul style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    zIndex: 100,
-                    background: 'var(--bg-panel, #1e1e2e)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    listStyle: 'none',
-                    padding: '4px 0',
-                    margin: '4px 0 0 0',
-                    maxHeight: '160px',
-                    overflowY: 'auto'
-                  }}>
+                  <ul className="new-product-modal-style-008">
                     {addressSuggestions.map((suggestion, idx) => {
                       const formatted = formatPhotonAddress(suggestion);
                       return (
@@ -1021,23 +1008,23 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
 
               {/* Exact Address input display */}
               {address && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="form-group new-product-modal-style-007" >
                   <label className="form-label">Saved Address</label>
                   <input
                     type="text"
-                    className="form-input"
-                    style={{ height: '32px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.01)', borderColor: 'var(--primary-border, var(--border))' }}
+                    className="form-input new-product-modal-style-006"
+                    
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
               )}
 
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: 1.5 }}>
+              <p className="new-product-modal-style-005">
                 Click on the map to pin coords, or search address above (autofills coordinates).
               </p>
 
-              <div style={{ height: '180px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <div className="new-product-modal-style-004">
                 <OpenFreeMap
                   onSelectCoords={(coords) => {
                     setPinnedCoords(coords);
@@ -1049,14 +1036,14 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               {pinnedCoords ? (
-                <div className="alert alert-success" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
+                <div className="alert alert-success new-product-modal-style-003" >
                   <CheckCircle size={14} />
                   <span>
                     Pinned — Lat {pinnedCoords.lat.toFixed(5)}, Lng {pinnedCoords.lng.toFixed(5)}
                   </span>
                 </div>
               ) : (
-                <div className="alert alert-info" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
+                <div className="alert alert-info new-product-modal-style-002" >
                   <Info size={14} />
                   <span>No location pinned. Product will list without a map marker.</span>
                 </div>
@@ -1066,8 +1053,8 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
             <button
               id="modal-sell-submit-btn"
               type="submit"
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+              className="btn btn-primary btn-lg new-product-modal-style-001"
+              
               disabled={isSubmitting}
             >
               {isSubmitting ? (

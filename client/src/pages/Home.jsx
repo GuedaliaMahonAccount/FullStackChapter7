@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
 import { Search, MapPin, Layers, ShoppingCart, ArrowRight, TrendingUp } from 'lucide-react';
@@ -63,7 +63,7 @@ export const Home = () => {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const result = await get('/currency/rates?from=ILS');
+        const result = await get('/currency/rates?from=ILS', { ttl: 60 * 60 * 1000 }); // 60 minutes cache
         if (result.success) {
           setExchangeRates(result.data);
         }
@@ -79,7 +79,7 @@ export const Home = () => {
       setLoading(true);
       try {
         if (categories.length === 0) {
-          const catRes = await get('/categories');
+          const catRes = await get('/categories', { ttl: Infinity }); // Cached infinitely (until categories clear)
           if (catRes.success) setCategories(catRes.data);
         }
 
@@ -89,7 +89,7 @@ export const Home = () => {
         if (searchQuery) params.push(`search=${encodeURIComponent(searchQuery)}`);
         if (params.length > 0) endpoint += `?${params.join('&')}`;
 
-        const prodRes = await get(endpoint);
+        const prodRes = await get(endpoint, { ttl: Infinity }); // Cached infinitely (invalidated on product CUD/order)
         if (prodRes.success) setProducts(prodRes.data);
       } catch (err) {
         console.error('Error fetching marketplace feed:', err);
@@ -99,6 +99,8 @@ export const Home = () => {
     };
     fetchData();
   }, [selectedCategory, searchQuery]);
+
+
 
   const sortedProducts = [...products].sort((a, b) => {
     if (sortBy === 'priceAsc') {
@@ -116,41 +118,40 @@ export const Home = () => {
   });
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="page-container home-page">
 
       {/* ── Hero ── */}
       <section className="hero-section animate-in">
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span className="badge badge-teal" style={{ fontSize: '0.72rem' }}>
+        <div className="home-hero-content">
+          <div className="home-hero-badge-row">
+            <span className="badge badge-teal home-live-badge">
               <TrendingUp size={11} /> Live Marketplace
             </span>
           </div>
 
-          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.7rem)', fontWeight: 900, lineHeight: 1.15 }}>
+          <h1 className="home-hero-title">
             Discover items for sale{' '}
             <span className="text-gradient">right around&nbsp;you</span>
           </h1>
 
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '560px', fontSize: '1rem', lineHeight: 1.65 }}>
+          <p className="home-hero-copy">
             GeoMarket is the local C2C marketplace — find deals nearby and list your items in seconds.
           </p>
 
           {/* Search bar */}
-          <div style={{ display: 'flex', gap: '10px', maxWidth: '620px', width: '100%', marginTop: '6px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <div className="home-search-row">
+            <div className="home-search-field">
               <Search
                 size={18}
-                style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
+                className="home-search-icon"
               />
               <input
                 id="home-search-input"
                 type="text"
-                className="form-input"
+                className="form-input home-search-input"
                 placeholder="Search listings — e.g. iPhone, bicycle, textbook…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '46px', height: '52px', fontSize: '0.95rem', borderRadius: 'var(--radius-md)' }}
               />
             </div>
           </div>
@@ -179,13 +180,13 @@ export const Home = () => {
       </div>
 
       {/* ── Split Layout ── */}
-      <div className="split-layout" style={{ minHeight: '600px' }}>
+      <div className="split-layout home-content-layout">
 
         {/* Left: Product Grid */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="home-listings-column">
           <div className="section-header w-full">
-            <h2 className="section-title" style={{ fontSize: '1.1rem', margin: 0 }}>
-              <Layers size={18} style={{ color: 'var(--secondary)' }} />
+            <h2 className="section-title home-section-title">
+              <Layers size={18} className="home-section-title-icon-secondary" />
               Active Listings
               <span className="listing-count-badge">
                 {products.length}
@@ -214,7 +215,7 @@ export const Home = () => {
           ) : products.length === 0 ? (
             <div className="glass-panel-static empty-state">
               <Layers size={44} className="empty-state-icon" />
-              <p style={{ color: 'var(--text-secondary)' }}>No listings match your current filters.</p>
+              <p className="home-empty-text">No listings match your current filters.</p>
               <button
                 id="reset-filters-btn"
                 onClick={() => { setSelectedCategory(null); setSearchQuery(''); }}
@@ -242,10 +243,10 @@ export const Home = () => {
                         src={getImageUrl(product.imageUrl)}
                         alt={product.title}
                       />
-                      <div className="product-card-price-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', padding: '6px 10px', height: 'auto' }}>
-                        <div style={{ fontWeight: 800 }}>{formatPrice(product.price, product.currency)}</div>
+                      <div className="product-card-price-badge home-price-badge">
+                        <div className="home-price-primary">{formatPrice(product.price, product.currency)}</div>
                         {product.currency !== 'ILS' && exchangeRates && exchangeRates.rates?.[product.currency] && (
-                          <div style={{ fontSize: '0.68rem', opacity: 0.85, fontWeight: 500 }}>
+                          <div className="home-price-converted">
                             ≈ {formatPrice(product.price / exchangeRates.rates[product.currency], 'ILS')}
                           </div>
                         )}
@@ -255,10 +256,10 @@ export const Home = () => {
                     {/* Body */}
                     <div className="product-card-body">
                       {/* Tags */}
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <div className="home-card-tags">
                         <span className="badge badge-primary">{product.category?.name}</span>
                         {distance !== null ? (
-                          <span className="badge badge-teal" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <span className="badge badge-teal home-distance-badge">
                             <MapPin size={9} /> {distance.toFixed(1)} km away
                           </span>
                         ) : product.latitude ? (
@@ -268,9 +269,9 @@ export const Home = () => {
                         ) : null}
 
                         {product.stockQuantity <= 0 ? (
-                          <span className="badge badge-error" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>Out of Stock</span>
+                          <span className="badge badge-error home-stock-badge">Out of Stock</span>
                         ) : (
-                          <span className="badge badge-secondary" style={{ fontSize: '0.68rem', padding: '2px 6px', opacity: 0.9 }}>
+                          <span className="badge badge-secondary home-stock-badge home-stock-badge-available">
                             {product.stockQuantity} in stock
                           </span>
                         )}
@@ -286,8 +287,8 @@ export const Home = () => {
                         return reviewsCount > 0 ? (
                           <div className="card-rating-badge">
                             <span>★</span>
-                            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{avgRating}</span>
-                            <span style={{ color: 'var(--text-muted)' }}>({reviewsCount})</span>
+                            <span className="home-rating-value">{avgRating}</span>
+                            <span className="home-rating-count">({reviewsCount})</span>
                           </div>
                         ) : (
                           <div className="card-rating-empty">
@@ -296,21 +297,21 @@ export const Home = () => {
                         );
                       })()}
 
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                    <h3 className="home-product-title">
                       {product.title}
                     </h3>
 
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
+                    <p className="home-product-description">
                       {product.description}
                     </p>
 
                     {/* Footer */}
                     <div className="product-card-footer">
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <span className="home-product-seller">
                         By {user && product.seller && user.id === product.seller.id ? 'Me' : product.seller?.fullName}
                       </span>
 
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div className="home-card-actions">
                         <button
                           onClick={() => {
                             if (!user) {
@@ -325,13 +326,12 @@ export const Home = () => {
                         >
                           <ShoppingCart size={15} />
                         </button>
-                        <a
-                          href={`/products/${product.id}`}
-                          className="btn btn-primary btn-sm"
-                          style={{ padding: '7px 13px', fontSize: '0.8rem' }}
+                         <Link
+                          to={`/products/${product.id}`}
+                          className="btn btn-primary btn-sm home-details-btn"
                         >
                           Details <ArrowRight size={13} />
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -343,16 +343,13 @@ export const Home = () => {
         </div>
 
         {/* Right: Map */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '100px', alignSelf: 'start' }}>
-          <h2 className="section-title" style={{ fontSize: '1.1rem' }}>
-            <MapPin size={18} style={{ color: 'var(--primary)' }} />
+        <div className="home-map-column">
+          <h2 className="section-title home-section-title">
+            <MapPin size={18} className="home-section-title-icon-primary" />
             Geomapping Feed
           </h2>
 
-          <div
-            className="glass-panel-static"
-            style={{ height: 'calc(100vh - 220px)', minHeight: '480px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 0 }}
-          >
+          <div className="glass-panel-static home-map-panel">
             {!loading && <OpenFreeMap products={products} height="100%" />}
           </div>
         </div>

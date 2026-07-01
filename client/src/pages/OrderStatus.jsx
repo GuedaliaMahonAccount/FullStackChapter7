@@ -22,7 +22,7 @@ export const OrderStatus = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await get('/orders/buyer');
+      const res = await get('/orders/buyer', { ttl: Infinity }); // Cached infinitely (invalidated on new order/status update)
       if (res.success) {
         setOrders(res.data);
         if (res.data.length > 0) setSelectedOrder(res.data[0].id);
@@ -37,12 +37,14 @@ export const OrderStatus = () => {
   const fetchDetails = async () => {
     if (!selectedOrder) return;
     try {
-      const res = await get(`/orders/${selectedOrder}`);
+      const res = await get(`/orders/${selectedOrder}`, { ttl: Infinity }); // Cached infinitely (invalidated on new order/status update)
       if (res.success) setOrderDetails(res.data);
     } catch (err) {
       console.error('Error fetching order details:', err);
     }
   };
+
+
 
   const handleRefresh = async () => {
     await fetchDetails();
@@ -69,38 +71,38 @@ export const OrderStatus = () => {
     : 0;
 
   if (loading) {
-    return <div className="loading-center" style={{ height: '60vh' }}><div className="spinner spinner-lg" /></div>;
+    return <div className="loading-center order-status-style-046" ><div className="spinner spinner-lg" /></div>;
   }
 
   if (orders.length === 0) {
     return (
       <div className="page-container">
-        <div className="glass-panel-static empty-state" style={{ padding: '80px 40px' }}>
+        <div className="glass-panel-static empty-state order-status-style-045" >
           <ShoppingBag size={56} className="empty-state-icon" />
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>No orders yet</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>You haven't placed any orders yet.</p>
+          <h2 className="order-status-style-044">No orders yet</h2>
+          <p className="order-status-style-043">You haven't placed any orders yet.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="page-container order-status-style-042" >
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="order-status-style-041">
         <div>
-          <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 900 }}>
+          <h1 className="order-status-style-040">
             Order <span className="text-gradient">Tracking</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
+          <p className="order-status-style-039">
             Click refresh to check for latest updates
           </p>
         </div>
         <button 
-          className="btn btn-secondary" 
+          className="btn btn-secondary order-status-style-038" 
           onClick={handleRefresh} 
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '0.88rem', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}
+          
         >
           <RefreshCw size={14} /> Refresh Status
         </button>
@@ -110,8 +112,8 @@ export const OrderStatus = () => {
       <div className="sidebar-layout">
 
         {/* Left: Orders List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h2 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>
+        <div className="order-status-style-037">
+          <h2 className="order-status-style-036">
             Your Purchases
           </h2>
 
@@ -137,14 +139,14 @@ export const OrderStatus = () => {
                 onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = 'var(--border-hover)'; }}
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = 'var(--border)'; }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Order #{o.id}</span>
-                  <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>
+                <div className="order-status-style-035">
+                  <span className="order-status-style-034">Order #{o.id}</span>
+                  <span className="order-status-style-033">
                     {formatPrice(o.totalPrice, o.currency || 'USD')}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <div className="order-status-style-032">
+                  <span className="order-status-style-031">
                     {new Date(o.createdAt).toLocaleDateString()}
                   </span>
                   <span className={`badge badge-${o.status?.toLowerCase() || 'pending'}`}>
@@ -159,15 +161,15 @@ export const OrderStatus = () => {
         {/* Right: Detail Panel */}
         <div>
           {orderDetails ? (
-            <div className="glass-panel-static" style={{ padding: '28px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.2s ease' }}>
+            <div className="glass-panel-static order-status-style-030" >
 
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: '18px' }}>
+              <div className="order-status-style-029">
                 <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '4px' }}>
+                  <h2 className="order-status-style-028">
                     Order #{orderDetails.orderId}
                   </h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <p className="order-status-style-027">
                     Placed {new Date(orderDetails.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -177,10 +179,10 @@ export const OrderStatus = () => {
               </div>
 
               {/* Progress Stepper */}
-              <div style={{ padding: '8px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
+              <div className="order-status-style-025">
+                <div className="order-status-style-024">
                   {/* Track line */}
-                  <div style={{ position: 'absolute', top: 16, left: '8%', right: '8%', height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }} />
+                  <div className="order-status-style-023" />
                   <div style={{
                     position: 'absolute',
                     top: 16,
@@ -197,7 +199,7 @@ export const OrderStatus = () => {
                     const done   = idx <= currentStepIdx;
                     const active = idx === currentStepIdx;
                     return (
-                      <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', zIndex: 2, flex: 1 }}>
+                      <div key={step} className="order-status-style-022">
                         <div style={{
                           width: 34,
                           height: 34,
@@ -228,26 +230,26 @@ export const OrderStatus = () => {
               <div className="details-grid">
 
                 {/* Items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                <div className="order-status-style-021">
+                  <h3 className="order-status-style-020">
                     Products
                   </h3>
 
                   {orderDetails.items.map((item) => (
                     <div
                       key={item.id}
-                      style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.025)', padding: '10px 12px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)' }}
+                      className="order-status-style-019"
                     >
                       <img
                         src={getImageUrl(item.product?.imageUrl)}
                         alt={item.product?.title}
-                        style={{ width: 46, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                        className="order-status-style-018"
                       />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h4 style={{ fontSize: '0.86rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>
+                      <div className="order-status-style-017">
+                        <h4 className="order-status-style-016">
                           {item.product?.title}
                         </h4>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                        <span className="order-status-style-015">
                           {item.quantity}× {formatPrice(item.priceAtPurchase, item.product?.currency || 'USD')}
                         </span>
                       </div>
@@ -255,27 +257,27 @@ export const OrderStatus = () => {
                   ))}
 
                   {/* Shipping address */}
-                  <div style={{ background: 'rgba(255,255,255,0.025)', padding: '12px 14px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)', fontSize: '0.83rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', marginBottom: '5px', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
+                  <div className="order-status-style-014">
+                    <div className="order-status-style-013">
                       <MapPin size={12} /> Shipping Address
                     </div>
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{orderDetails.shippingAddress}</p>
+                    <p className="order-status-style-012">{orderDetails.shippingAddress}</p>
                   </div>
                 </div>
 
                 {/* Timeline */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                <div className="order-status-style-011">
+                  <h3 className="order-status-style-010">
                     Status Log
                   </h3>
 
                   {/* Carrier */}
                   {orderDetails.tracking?.carrier_details?.carrier_name && (
-                    <div className="alert alert-info" style={{ fontSize: '0.82rem', padding: '10px 14px' }}>
+                    <div className="alert alert-info order-status-style-009" >
                       <Truck size={16} />
                       <div>
-                        <p style={{ fontWeight: 700 }}>{orderDetails.tracking.carrier_details.carrier_name}</p>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                        <p className="order-status-style-008">{orderDetails.tracking.carrier_details.carrier_name}</p>
+                        <p className="order-status-style-007">
                           #{orderDetails.tracking.carrier_details.tracking_number}
                         </p>
                       </div>
@@ -283,11 +285,11 @@ export const OrderStatus = () => {
                   )}
 
                   {/* Timeline */}
-                  <div style={{ position: 'relative', paddingLeft: '20px', borderLeft: '2px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="order-status-style-006">
                     {orderDetails.tracking?.status_history?.map((h, i) => {
                       const isLatest = i === orderDetails.tracking.status_history.length - 1;
                       return (
-                        <div key={i} style={{ position: 'relative' }}>
+                        <div key={i} className="order-status-style-005">
                           <div style={{
                             position: 'absolute',
                             left: '-27px',
@@ -299,14 +301,14 @@ export const OrderStatus = () => {
                             boxShadow: isLatest ? '0 0 8px var(--secondary)' : 'none',
                             border: `2px solid ${isLatest ? 'var(--secondary)' : 'transparent'}`,
                           }} />
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>
+                          <span className="order-status-style-004">
                             {new Date(h.changed_at).toLocaleString()}
                           </span>
                           <span style={{ fontSize: '0.87rem', fontWeight: 700, color: isLatest ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                             {h.status}
                           </span>
                           {h.notes && (
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{h.notes}</p>
+                            <p className="order-status-style-003">{h.notes}</p>
                           )}
                         </div>
                       );
@@ -316,8 +318,8 @@ export const OrderStatus = () => {
               </div>
             </div>
           ) : (
-            <div className="glass-panel-static" style={{ padding: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)' }}>
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Select an order to view tracking details.</p>
+            <div className="glass-panel-static order-status-style-002" >
+              <p className="order-status-style-001">Select an order to view tracking details.</p>
             </div>
           )}
         </div>

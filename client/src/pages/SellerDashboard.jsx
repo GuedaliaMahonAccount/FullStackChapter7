@@ -20,7 +20,7 @@ export const SellerDashboard = () => {
   const fetchMyProducts = useCallback(async () => {
     setProductsLoading(true);
     try {
-      const res = await get('/products/mine');
+      const res = await get('/products/mine', { ttl: Infinity }); // Cached infinitely (invalidated on product CUD/order)
       if (res.success) setProducts(res.data);
     } catch (err) {
       console.error('Error fetching seller products:', err);
@@ -32,7 +32,7 @@ export const SellerDashboard = () => {
   const fetchMyOrders = useCallback(async () => {
     setOrdersLoading(true);
     try {
-      const res = await get('/orders/seller');
+      const res = await get('/orders/seller', { ttl: Infinity }); // Cached infinitely (invalidated on order updates)
       if (res.success) setSellerOrders(res.data);
     } catch (err) {
       console.error('Error fetching seller orders:', err);
@@ -40,6 +40,7 @@ export const SellerDashboard = () => {
       setOrdersLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     fetchMyProducts();
@@ -95,15 +96,15 @@ export const SellerDashboard = () => {
   ];
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="page-container seller-dashboard-style-014" >
 
       {/* Page Header */}
       <div>
-        <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 900, marginBottom: '4px' }}>
-          <LayoutDashboard size={28} style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--secondary)' }} />
+        <h1 className="seller-dashboard-style-013">
+          <LayoutDashboard size={28} className="seller-dashboard-style-012" />
           Seller <span className="text-gradient">Dashboard</span>
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+        <p className="seller-dashboard-style-011">
           Manage your products, track sales, and fulfill orders — all in one place.
         </p>
       </div>
@@ -112,10 +113,10 @@ export const SellerDashboard = () => {
       <div className="seller-stats-grid">
         {stats.map((s, i) => (
           <div key={i} className="stat-card" style={{ animationDelay: `${i * 0.08}s`, animation: 'slideUp 0.3s ease both' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-              <div style={{ minWidth: 0 }}>
+            <div className="seller-dashboard-style-010">
+              <div className="seller-dashboard-style-009">
                 <div className="stat-value" style={{ color: s.color, fontSize: 'clamp(1.2rem, 3.5vw, 2rem)' }}>{s.value}</div>
-                <div className="stat-label" style={{ marginTop: '6px' }}>{s.label}</div>
+                <div className="stat-label seller-dashboard-style-008" >{s.label}</div>
               </div>
               <div className="stat-icon-wrapper" style={{
                 background: s.bg,
@@ -129,21 +130,21 @@ export const SellerDashboard = () => {
       </div>
 
       {/* Section: My Products */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div className="seller-dashboard-style-007">
         <div className="section-header">
           <h2>
-            <BarChart3 size={20} style={{ color: 'var(--primary-light)' }} />
+            <BarChart3 size={20} className="seller-dashboard-style-006" />
             My Products
             {!productsLoading && (
-              <span className="badge badge-primary" style={{ fontSize: '0.7rem', marginLeft: '4px' }}>
+              <span className="badge badge-primary seller-dashboard-style-005" >
                 {totalProducts}
               </span>
             )}
           </h2>
           <button
             id="seller-new-product-btn"
-            className="btn btn-primary"
-            style={{ gap: '6px' }}
+            className="btn btn-primary seller-dashboard-style-004"
+            
             onClick={() => setShowModal(true)}
           >
             <PlusCircle size={17} />
@@ -162,13 +163,13 @@ export const SellerDashboard = () => {
       <div className="divider" />
 
       {/* Section: Incoming Orders */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div className="seller-dashboard-style-003">
         <div className="section-header">
           <h2>
-            <ShoppingBag size={20} style={{ color: 'var(--secondary-light)' }} />
+            <ShoppingBag size={20} className="seller-dashboard-style-002" />
             Incoming Orders
             {!ordersLoading && (
-              <span className="badge badge-teal" style={{ fontSize: '0.7rem', marginLeft: '4px' }}>
+              <span className="badge badge-teal seller-dashboard-style-001" >
                 {totalOrders}
               </span>
             )}

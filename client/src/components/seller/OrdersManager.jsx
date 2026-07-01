@@ -33,7 +33,7 @@ export const OrdersManager = () => {
   // Fetch orders where logged-in user is seller
   const fetchSellerOrders = async (shouldSelectFirst = true) => {
     try {
-      const res = await get('/orders/seller');
+      const res = await get('/orders/seller', { ttl: Infinity }); // Cached infinitely (invalidated on order status updates)
       if (res.success) {
         setOrders(res.data);
         const isDesktop = window.innerWidth > 768;
@@ -62,7 +62,7 @@ export const OrdersManager = () => {
     const fetchDetails = async () => {
       setDetailsLoading(true);
       try {
-        const res = await get(`/orders/${selectedOrderId}`);
+        const res = await get(`/orders/${selectedOrderId}`, { ttl: Infinity }); // Cached infinitely (invalidated on order status updates)
         if (res.success) {
           setOrderDetails(res.data);
           // Set status dropdown to match current status
@@ -100,7 +100,7 @@ export const OrdersManager = () => {
         // Reload list to sync statuses without reset selection
         fetchSellerOrders(false);
         // Refresh local details
-        const updatedDetails = await get(`/orders/${selectedOrderId}`);
+        const updatedDetails = await get(`/orders/${selectedOrderId}`, { ttl: Infinity }); // Cache the updated details
         if (updatedDetails.success) {
           setOrderDetails(updatedDetails.data);
         }
@@ -123,15 +123,15 @@ export const OrdersManager = () => {
     : 0;
 
   if (loading) {
-    return <div className="loading-center" style={{ height: '40vh' }}><div className="spinner spinner-lg" /></div>;
+    return <div className="loading-center orders-manager-style-062" ><div className="spinner spinner-lg" /></div>;
   }
 
   if (orders.length === 0) {
     return (
-      <div className="glass-panel-static empty-state" style={{ padding: '50px 30px' }}>
-        <ShoppingBag size={48} className="empty-state-icon" style={{ color: 'var(--primary)' }} />
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>No orders yet</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>Nobody has purchased your items yet. Keep sharing your listings!</p>
+      <div className="glass-panel-static empty-state orders-manager-style-061" >
+        <ShoppingBag size={48} className="empty-state-icon orders-manager-style-060"  />
+        <h3 className="orders-manager-style-059">No orders yet</h3>
+        <p className="orders-manager-style-058">Nobody has purchased your items yet. Keep sharing your listings!</p>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export const OrdersManager = () => {
       
       {/* Left Side: Orders List */}
       <div className="orders-list-col">
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '4px' }}>
+        <h3 className="orders-manager-style-057">
           Incoming Orders ({orders.length})
         </h3>
 
@@ -184,20 +184,20 @@ export const OrdersManager = () => {
               onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = 'var(--border-hover)'; }}
               onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = 'var(--border)'; }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', wordBreak: 'break-all', flex: 1, minWidth: '120px' }}>Order #{o.id}</span>
-                <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem', flexShrink: 0 }}>
+              <div className="orders-manager-style-056">
+                <span className="orders-manager-style-055">Order #{o.id}</span>
+                <span className="orders-manager-style-054">
                   {formatPrice(o.totalPrice, o.items?.[0]?.product?.currency || 'USD')}
                 </span>
               </div>
               
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className="orders-manager-style-053">
                 <User size={12} />
                 <span>{o.buyer?.fullName || 'Buyer'}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <div className="orders-manager-style-052">
+                <span className="orders-manager-style-051">
                   {new Date(o.createdAt).toLocaleDateString()}
                 </span>
                 <span className={`badge badge-${o.status?.toLowerCase() || 'pending'}`}>
@@ -212,22 +212,17 @@ export const OrdersManager = () => {
       {/* Right Side: Details & Action Panel */}
       <div className="orders-detail-col">
         {detailsLoading ? (
-          <div className="glass-panel-static" style={{ padding: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: 'var(--radius-md)' }}>
+          <div className="glass-panel-static orders-manager-style-050" >
             <div className="spinner" />
           </div>
         ) : orderDetails ? (
-          <div className="glass-panel-static order-details-card" style={{ borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.2s ease' }}>
+          <div className="glass-panel-static order-details-card orders-manager-style-049" >
             
             {/* Mobile Back Button */}
             <button
-              className="btn btn-secondary mobile-back-btn"
+              className="btn btn-secondary mobile-back-btn orders-manager-style-048"
               onClick={() => setSelectedOrderId(null)}
-              style={{
-                alignSelf: 'flex-start',
-                gap: '6px',
-                fontSize: '0.85rem',
-                padding: '6px 12px'
-              }}
+              
             >
               <ArrowLeft size={14} />
               Back to Orders
@@ -239,7 +234,7 @@ export const OrdersManager = () => {
                 <h3 className="order-details-title">
                   Order #{orderDetails.orderId} Details
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                <p className="orders-manager-style-047">
                   Purchased {new Date(orderDetails.createdAt).toLocaleString()}
                 </p>
               </div>
@@ -249,9 +244,9 @@ export const OrdersManager = () => {
             </div>
 
             {/* Progress Stepper */}
-            <div style={{ padding: '8px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 16, left: '8%', right: '8%', height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }} />
+            <div className="orders-manager-style-045">
+              <div className="orders-manager-style-044">
+                <div className="orders-manager-style-043" />
                 <div style={{
                   position: 'absolute',
                   top: 16,
@@ -268,7 +263,7 @@ export const OrdersManager = () => {
                   const done   = idx <= currentStepIdx;
                   const active = idx === currentStepIdx;
                   return (
-                    <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', zIndex: 2, flex: 1 }}>
+                    <div key={step} className="orders-manager-style-042">
                       <div style={{
                         width: 34,
                         height: 34,
@@ -299,29 +294,29 @@ export const OrdersManager = () => {
             <div className="details-grid">
               
               {/* Left Sub-column: Products sold & delivery */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="orders-manager-style-041">
                 
                 {/* Products */}
                 <div>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>
+                  <h4 className="orders-manager-style-040">
                     Products Sold
                   </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="orders-manager-style-039">
                     {orderDetails.items.map((item) => (
                       <div
                         key={item.id}
-                        style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)' }}
+                        className="orders-manager-style-038"
                       >
                         <img
                           src={getImageUrl(item.product?.imageUrl)}
                           alt={item.product?.title}
-                          style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                          className="orders-manager-style-037"
                         />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h5 style={{ fontSize: '0.86rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>
+                        <div className="orders-manager-style-036">
+                          <h5 className="orders-manager-style-035">
                             {item.product?.title}
                           </h5>
-                          <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                          <span className="orders-manager-style-034">
                             Quantity: {item.quantity} × {formatPrice(item.priceAtPurchase, item.product?.currency || 'USD')}
                           </span>
                         </div>
@@ -331,49 +326,49 @@ export const OrdersManager = () => {
                 </div>
 
                 {/* Customer Information */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)', fontSize: '0.83rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
+                <div className="orders-manager-style-033">
+                  <div className="orders-manager-style-032">
                     <User size={12} /> Buyer Profile
                   </div>
-                  <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{orderDetails.buyer?.fullName}</p>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{orderDetails.buyer?.email}</p>
+                  <p className="orders-manager-style-031">{orderDetails.buyer?.fullName}</p>
+                  <p className="orders-manager-style-030">{orderDetails.buyer?.email}</p>
                 </div>
 
                 {/* Shipping address */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border)', fontSize: '0.83rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', marginBottom: '5px', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
+                <div className="orders-manager-style-029">
+                  <div className="orders-manager-style-028">
                     <MapPin size={12} /> Shipping Destination
                   </div>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{orderDetails.shippingAddress}</p>
+                  <p className="orders-manager-style-027">{orderDetails.shippingAddress}</p>
                 </div>
               </div>
 
               {/* Right Sub-column: Status Updates & Logs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="orders-manager-style-026">
                 
                 {/* Status Log Timeline */}
                 <div>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '12px' }}>
+                  <h4 className="orders-manager-style-025">
                     History Log
                   </h4>
                   
                   {orderDetails.tracking?.carrier_details?.carrier_name && (
-                    <div className="alert alert-info" style={{ fontSize: '0.82rem', padding: '10px 14px', marginBottom: '12px', gap: '10px' }}>
-                      <Truck size={16} style={{ flexShrink: 0 }} />
+                    <div className="alert alert-info orders-manager-style-024" >
+                      <Truck size={16} className="orders-manager-style-023" />
                       <div>
-                        <p style={{ fontWeight: 700 }}>{orderDetails.tracking.carrier_details.carrier_name}</p>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                        <p className="orders-manager-style-022">{orderDetails.tracking.carrier_details.carrier_name}</p>
+                        <p className="orders-manager-style-021">
                           Ref: #{orderDetails.tracking.carrier_details.tracking_number}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  <div style={{ position: 'relative', paddingLeft: '20px', borderLeft: '2px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="orders-manager-style-020">
                     {orderDetails.tracking?.status_history?.map((h, i) => {
                       const isLatest = i === (orderDetails.tracking.status_history.length - 1);
                       return (
-                        <div key={i} style={{ position: 'relative' }}>
+                        <div key={i} className="orders-manager-style-019">
                           <div style={{
                             position: 'absolute',
                             left: '-27px',
@@ -385,14 +380,14 @@ export const OrdersManager = () => {
                             boxShadow: isLatest ? '0 0 8px var(--secondary)' : 'none',
                             border: `2px solid ${isLatest ? 'var(--secondary)' : 'transparent'}`,
                           }} />
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>
+                          <span className="orders-manager-style-018">
                             {new Date(h.changed_at).toLocaleString()}
                           </span>
                           <span style={{ fontSize: '0.84rem', fontWeight: 700, color: isLatest ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                             {h.status}
                           </span>
                           {h.notes && (
-                            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.4 }}>{h.notes}</p>
+                            <p className="orders-manager-style-017">{h.notes}</p>
                           )}
                         </div>
                       );
@@ -404,33 +399,33 @@ export const OrdersManager = () => {
             </div>
 
             {/* Action Update Panel */}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#fff' }}>
+            <div className="orders-manager-style-016">
+              <h4 className="orders-manager-style-015">
                 Update Fulfillment Status
               </h4>
 
               {message && (
-                <div className="alert alert-success" style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
-                  <CheckCircle size={16} style={{ flexShrink: 0 }} />
+                <div className="alert alert-success orders-manager-style-014" >
+                  <CheckCircle size={16} className="orders-manager-style-013" />
                   <span>{message}</span>
                 </div>
               )}
 
               {errorMsg && (
-                <div className="alert alert-error" style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
-                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <div className="alert alert-error orders-manager-style-012" >
+                  <AlertCircle size={16} className="orders-manager-style-011" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
-              <form onSubmit={handleUpdateStatusSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
+              <form onSubmit={handleUpdateStatusSubmit} className="orders-manager-style-010">
+                <div className="form-group orders-manager-style-009" >
                   <label className="form-label">New Status</label>
                   <select
-                    className="form-input"
+                    className="form-input orders-manager-style-008"
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    style={{ background: 'var(--bg-card)' }}
+                    
                   >
                     {getAvailableStatusOptions(orderDetails.tracking?.current_status || 'Pending').map(opt => (
                       <option key={opt} value={opt}>
@@ -446,7 +441,7 @@ export const OrdersManager = () => {
 
                 {status === 'Shipped' && (
                   <div className="carrier-info-grid">
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group orders-manager-style-007" >
                       <label className="form-label">Carrier Company</label>
                       <input
                         type="text"
@@ -457,7 +452,7 @@ export const OrdersManager = () => {
                         required
                       />
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group orders-manager-style-006" >
                       <label className="form-label">Tracking ID / Number</label>
                       <input
                         type="text"
@@ -471,7 +466,7 @@ export const OrdersManager = () => {
                   </div>
                 )}
 
-                <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="form-group orders-manager-style-005" >
                   <label className="form-label">Status Notes / Remarks</label>
                   <textarea
                     className="form-input"
@@ -485,12 +480,12 @@ export const OrdersManager = () => {
 
                 <button
                   type="submit"
-                  className="btn btn-primary"
-                  style={{ width: '100%', padding: '12px', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}
+                  className="btn btn-primary orders-manager-style-004"
+                  
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <><span className="spinner spinner-sm" style={{ borderTopColor: '#fff', marginRight: '8px' }} /> Updating status...</>
+                    <><span className="spinner spinner-sm orders-manager-style-003"  /> Updating status...</>
                   ) : 'Update Status'}
                 </button>
               </form>
@@ -498,8 +493,8 @@ export const OrdersManager = () => {
 
           </div>
         ) : (
-          <div className="glass-panel-static" style={{ padding: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)' }}>
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Select an order from the side list to view detail history and perform updates.</p>
+          <div className="glass-panel-static orders-manager-style-002" >
+            <p className="orders-manager-style-001">Select an order from the side list to view detail history and perform updates.</p>
           </div>
         )}
       </div>

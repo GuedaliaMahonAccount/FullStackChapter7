@@ -63,11 +63,16 @@ const getAllProducts = async (filters = {}) => {
     }
   }
 
-  // Return all matching products, including seller and category info
+  // Return all matching products, including seller and category info (excluding barcode/timestamps to minimize payload)
   return await Product.findAll({
     where: whereClause,
+    attributes: [
+      'id', 'sellerId', 'categoryId', 'title', 'description', 
+      'price', 'imageUrl', 'stockQuantity', 'latitude', 
+      'longitude', 'address', 'currency', 'createdAt'
+    ],
     include: [
-      { model: User, as: 'seller', attributes: ['id', 'fullName', 'email'] },
+      { model: User, as: 'seller', attributes: ['id', 'fullName'] },
       { model: Category, as: 'category', attributes: ['id', 'name'] },
       { model: Review, as: 'reviews', attributes: ['rating'] }
     ],
@@ -78,7 +83,7 @@ const getAllProducts = async (filters = {}) => {
 const getProductById = async (productId) => {
   const product = await Product.findByPk(productId, {
     include: [
-      { model: User, as: 'seller', attributes: ['id', 'fullName', 'email', 'avatarUrl'] },
+      { model: User, as: 'seller', attributes: ['id', 'fullName', 'avatarUrl'] },
       { model: Category, as: 'category', attributes: ['id', 'name'] }
     ]
   });

@@ -8,70 +8,70 @@ export const ApiInfo = () => {
   const apis = [
     {
       title: 'Photon Geocoding API',
-      icon: <MapPin size={22} style={{ color: '#14b8a6' }} />,
+      icon: <MapPin size={22} className="api-info-style-014" />,
       endpoint: 'https://photon.komoot.io/api/',
       description: 'Used for address auto-completion and geocoding coordinates lookup. Whenever sellers enter coordinates or buyers search checkout delivery details, Photon queries OpenStreetMap data to autocomplete and fill fields instantly.',
       badges: ['Keyless', 'OpenStreetMap', 'Autocomplete']
     },
     {
       title: 'OSRM Routing Engine',
-      icon: <Navigation size={22} style={{ color: '#6366f1' }} />,
+      icon: <Navigation size={22} className="api-info-style-013" />,
       endpoint: 'http://router.project-osrm.org/route/v1/',
       description: 'Calculates real-world road-driving distance and duration. Measures routes between buyer position (HTML5 browser Geolocation) and pickup locations, running inside a 2-second timeout wrapper falling back to Haversine math if OSRM limits queries.',
       badges: ['Keyless', 'Routing Machine', 'Driving Distance']
     },
     {
       title: 'Open-Meteo API',
-      icon: <Sun size={22} style={{ color: '#f59e0b' }} />,
+      icon: <Sun size={22} className="api-info-style-012" />,
       endpoint: 'https://api.open-meteo.com/v1/',
       description: 'Retrieves current weather details of the product pickup location using its coordinates. Displays temperature and weather states dynamically with advice tips (e.g. umbrella suggestions on rainy days, dehydration warnings in hot summer days).',
       badges: ['Keyless', 'Weather Forecast', 'Dynamic Advice']
     },
     {
       title: 'MyMemory Translation API',
-      icon: <Languages size={22} style={{ color: '#ec4899' }} />,
+      icon: <Languages size={22} className="api-info-style-011" />,
       endpoint: 'https://api.mymemory.translated.net/get',
       description: 'Allows buyers to translate listing descriptions on-the-fly between Hebrew and English. Provides regional accessibility dynamically with zero backend caching dependencies.',
       badges: ['Keyless', 'Free Tier', 'Localization']
     },
     {
       title: 'Frankfurter Currency API',
-      icon: <Globe size={22} style={{ color: '#a78bfa' }} />,
+      icon: <Globe size={22} className="api-info-style-010" />,
       endpoint: 'https://api.frankfurter.app/',
       description: 'Provides real-time currency conversion rates (such as ILS to USD/EUR) to automatically format foreign seller listings in local currency, keeping product listing lists consistent and readable.',
       badges: ['Keyless', 'Exchange Rates', 'Financial Conversion']
     },
     {
       title: 'Gemini LLM / mlvoca API',
-      icon: <Sparkles size={22} style={{ color: '#ef4444' }} />,
+      icon: <Sparkles size={22} className="api-info-style-009" />,
       endpoint: 'Google Gemini 1.5 Flash / mlvoca TinyLlama',
       description: 'Generates smart AI description suggestions for products based on their titles. If a Gemini API key is configured on the server, Google Gemini is used; otherwise, it falls back to mlvoca TinyLlama or static templates, ensuring 100% setup resilience.',
       badges: ['LLM Generation', 'Gemini 1.5 Flash', 'TinyLlama Fallback']
     },
     {
       title: 'OpenFreeMap & MapLibre GL',
-      icon: <Map size={22} style={{ color: '#06b6d4' }} />,
+      icon: <Map size={22} className="api-info-style-008" />,
       endpoint: 'https://tiles.openfreemap.org/styles/liberty',
       description: 'Used to render interactive, high-performance vector maps. MapLibre GL provides the client-side WebGL rendering engine, while OpenFreeMap serves open-source map tiles with zero keys, tracking, or usage limits.',
       badges: ['Keyless', 'MapLibre GL', 'Vector Tiles']
     },
     {
       title: 'Open Food Facts API',
-      icon: <Apple size={22} style={{ color: '#10b981' }} />,
+      icon: <Apple size={22} className="api-info-style-007" />,
       endpoint: 'https://world.openfoodfacts.org/api/v2/',
       description: 'Provides rich nutritional values, brand identification, allergen warnings, and ingredient sheets dynamically when EAN barcodes are scanned in the Food & Grocery category.',
       badges: ['Keyless', 'Food Catalog', 'Allergen Checker']
     },
     {
       title: 'Open Library API',
-      icon: <BookOpen size={22} style={{ color: '#f97316' }} />,
+      icon: <BookOpen size={22} className="api-info-style-006" />,
       endpoint: 'https://openlibrary.org/api/',
       description: 'Fetches publication dates, authors, pages counts, and original book cover previews automatically when ISBN barcodes are queried in the Books & Education category.',
       badges: ['Keyless', 'Book Catalog', 'Cover Preview']
     },
     {
       title: 'UPCitemdb API',
-      icon: <Barcode size={22} style={{ color: '#3b82f6' }} />,
+      icon: <Barcode size={22} className="api-info-style-005" />,
       endpoint: 'https://api.upcitemdb.com/prod/trial/',
       description: 'Searches generic consumer products (Electronics, Home, Fashion) by UPC/EAN barcodes. Implements a rate-limited free trial query (100 requests/day) with robust fail-safe bypasses.',
       badges: ['100 Req/Day Free', 'General Catalog', 'Fail-Safe Fallback']
@@ -80,16 +80,16 @@ export const ApiInfo = () => {
 
   return (
     <div className="api-info-container page-container animate-in">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="api-info-style-004">
         <button onClick={() => navigate(-1)} className="btn btn-ghost btn-icon" title="Go back">
           <ArrowLeft size={18} />
         </button>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Cpu size={24} style={{ color: 'var(--secondary)' }} /> System Architecture & External APIs
+        <h1 className="api-info-style-003">
+          <Cpu size={24} className="api-info-style-002" /> System Architecture & External APIs
         </h1>
       </div>
 
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.98rem', lineHeight: 1.65, margin: 0, maxWidth: '800px' }}>
+      <p className="api-info-style-001">
         GeoMarket is a standalone C2C E-commerce platform that implements multiple free, keyless third-party microservices.
         This design guarantees <strong>Zero Configuration setup</strong>—grading instructors can run the code instantly without acquiring API keys.
       </p>

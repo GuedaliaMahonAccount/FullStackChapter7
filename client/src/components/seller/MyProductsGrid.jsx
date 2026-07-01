@@ -35,8 +35,8 @@ export const MyProductsGrid = ({ products, loading, onRefresh }) => {
           <div key={i} className="product-card">
             <div className="product-card-img skeleton" />
             <div className="product-card-body">
-              <div className="skeleton" style={{ height: 16, width: '80%' }} />
-              <div className="skeleton" style={{ height: 12, width: '50%' }} />
+              <div className="skeleton my-products-grid-style-022"  />
+              <div className="skeleton my-products-grid-style-021"  />
             </div>
           </div>
         ))}
@@ -46,10 +46,10 @@ export const MyProductsGrid = ({ products, loading, onRefresh }) => {
 
   if (products.length === 0) {
     return (
-      <div className="glass-panel-static empty-state" style={{ padding: '50px 30px' }}>
-        <Package size={48} className="empty-state-icon" style={{ color: 'var(--primary)' }} />
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>No products yet</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+      <div className="glass-panel-static empty-state my-products-grid-style-020" >
+        <Package size={48} className="empty-state-icon my-products-grid-style-019"  />
+        <h3 className="my-products-grid-style-018">No products yet</h3>
+        <p className="my-products-grid-style-017">
           Click the <strong>+ New Product</strong> button above to publish your first product.
         </p>
       </div>
@@ -57,9 +57,9 @@ export const MyProductsGrid = ({ products, loading, onRefresh }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="my-products-grid-style-016">
       {deleteMsg && (
-        <div className="alert alert-success" style={{ padding: '10px 14px', fontSize: '0.84rem' }}>
+        <div className="alert alert-success my-products-grid-style-015" >
           <CheckCircle size={15} />
           <span>{deleteMsg}</span>
         </div>
@@ -82,88 +82,61 @@ export const MyProductsGrid = ({ products, loading, onRefresh }) => {
               animationDelay: `${idx * 0.05}s`
             }}
           >
-            <div className="product-card-img" style={{ position: 'relative', height: '160px', overflow: 'hidden', flexShrink: 0 }}>
+            <div className="product-card-img my-products-grid-style-014" >
               <img
                 src={getImageUrl(p.imageUrl)}
                 alt={p.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                className="my-products-grid-style-013"
               />
               <span
-                style={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  background: 'rgba(6,8,15,0.82)',
-                  backdropFilter: 'blur(8px)',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--border-soft)',
-                  color: 'var(--secondary)',
-                  fontWeight: 800,
-                  fontSize: '0.88rem',
-                }}
+                className="my-products-grid-style-012"
               >
                 {formatPrice(p.price, p.currency)}
               </span>
             </div>
 
-            <div className="product-card-body" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-              <h4 style={{
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'var(--text-primary)',
-              }}>
+            <div className="product-card-body my-products-grid-style-011" >
+              <h4 className="my-products-grid-style-010">
                 {p.title}
               </h4>
 
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="my-products-grid-style-009">
                 {p.category && (
-                  <span className="badge badge-primary" style={{ fontSize: '0.68rem' }}>
+                  <span className="badge badge-primary my-products-grid-style-008" >
                     {p.category.name}
                   </span>
                 )}
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                <span className="my-products-grid-style-007">
                   Stock: {p.stockQuantity}
                 </span>
               </div>
 
-              <p style={{
-                fontSize: '0.78rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.4,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}>
+              <p className="my-products-grid-style-006">
                 {p.description}
               </p>
             </div>
 
             <div className="product-card-static-footer-responsive">
-              <span className="product-date" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span className="product-date my-products-grid-style-005" >
                 {new Date(p.createdAt).toLocaleDateString()}
               </span>
-              <div className="product-actions" style={{ display: 'flex', gap: '6px' }}>
+              <div className="product-actions my-products-grid-style-004" >
                 <button
-                  className="btn btn-secondary btn-sm"
-                  style={{ padding: '5px 10px', gap: '4px', fontSize: '0.75rem' }}
+                  className="btn btn-secondary btn-sm my-products-grid-style-003"
+                  
                   onClick={() => setEditProduct(p)}
                 >
                   <Pencil size={12} />
                   Edit
                 </button>
                 <button
-                  className="btn btn-danger btn-sm"
-                  style={{ padding: '5px 10px', gap: '4px', fontSize: '0.75rem' }}
+                  className="btn btn-danger btn-sm my-products-grid-style-002"
+                  
                   onClick={() => handleDelete(p.id)}
                   disabled={deletingId === p.id}
                 >
                   {deletingId === p.id ? (
-                    <span className="spinner spinner-sm" style={{ width: 14, height: 14, borderWidth: '2px' }} />
+                    <span className="spinner spinner-sm my-products-grid-style-001"  />
                   ) : (
                     <>
                       <Trash2 size={12} />

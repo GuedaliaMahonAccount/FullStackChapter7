@@ -13,8 +13,12 @@ router.get('/mine', verifyToken, productController.getMyProducts);
 // Protected: suggest description using AI
 router.post('/suggest-description', verifyToken, productController.suggestDescription);
 
-// Public: single product detail (must be AFTER /mine)
+// Protected: search Pexels images securely via proxy
+router.get('/pexels-search', verifyToken, productController.searchPexels);
+
+// Public: single product detail (must be AFTER special routes to prevent parameter shadowing)
 router.get('/:id', productController.getProductDetail);
+
 
 // Protected routes (Only buyers/sellers can upload items)
 router.post('/', verifyToken, upload.single('image'), productController.createProduct);

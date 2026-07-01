@@ -156,23 +156,23 @@ export const Cart = () => {
   /* ── SUCCESS STATE ── */
   if (purchaseSuccess) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh', padding: '24px' }}>
+      <div className="cart-page-style-057">
         <div
-          className="glass-panel-static"
-          style={{ width: '100%', maxWidth: '480px', padding: '48px 40px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid rgba(20,184,166,0.25)', boxShadow: '0 0 60px rgba(20,184,166,0.08)', animation: 'slideUp 0.4s ease' }}
+          className="glass-panel-static cart-page-style-056"
+          
         >
-          <div style={{ display: 'inline-flex', background: 'rgba(20,184,166,0.12)', color: 'var(--secondary)', padding: '18px', borderRadius: '50%', marginBottom: '22px' }}>
+          <div className="cart-page-style-055">
             <CheckCircle size={52} />
           </div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, marginBottom: '10px' }}>Purchase Successful!</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.65, marginBottom: '28px' }}>
-            Your payment was processed. Order <strong style={{ color: 'var(--text-primary)' }}>#{purchaseSuccess.orderId}</strong> is now registered.
+          <h1 className="cart-page-style-054">Purchase Successful!</h1>
+          <p className="cart-page-style-053">
+            Your payment was processed. Order <strong className="cart-page-style-052">#{purchaseSuccess.orderId}</strong> is now registered.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button onClick={() => navigate('/orders')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+          <div className="cart-page-style-051">
+            <button onClick={() => navigate('/orders')} className="btn btn-primary btn-lg cart-page-style-050" >
               Track My Order <ArrowRight size={16} />
             </button>
-            <button onClick={() => navigate('/')} className="btn btn-secondary" style={{ width: '100%' }}>
+            <button onClick={() => navigate('/')} className="btn btn-secondary cart-page-style-049" >
               Continue Shopping
             </button>
           </div>
@@ -185,10 +185,10 @@ export const Cart = () => {
   if (cart.length === 0) {
     return (
       <div className="page-container">
-        <div className="glass-panel-static empty-state" style={{ padding: '80px 40px' }}>
+        <div className="glass-panel-static empty-state cart-page-style-048" >
           <ShoppingBag size={56} className="empty-state-icon" />
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Your cart is empty</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Browse the marketplace to find items near you.</p>
+          <h2 className="cart-page-style-047">Your cart is empty</h2>
+          <p className="cart-page-style-046">Browse the marketplace to find items near you.</p>
           <button onClick={() => navigate('/')} className="btn btn-primary">
             Browse Products
           </button>
@@ -198,14 +198,14 @@ export const Cart = () => {
   }
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="page-container cart-page-style-045" >
 
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 900 }}>
+        <h1 className="cart-page-style-044">
           Shopping <span className="text-gradient">Basket</span>
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
+        <p className="cart-page-style-043">
           Review your items and complete checkout
         </p>
       </div>
@@ -216,11 +216,11 @@ export const Cart = () => {
         </div>
       )}
 
-      <div className="split-layout" style={{ gridTemplateColumns: '1.2fr 1fr', alignItems: 'start' }}>
+      <div className="split-layout cart-page-style-042" >
 
         {/* Left: Items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="cart-page-style-041">
+          <h2 className="cart-page-style-040">
             <ShoppingBag size={16} />
             Items ({cart.length})
           </h2>
@@ -228,34 +228,26 @@ export const Cart = () => {
           {cart.map((item) => (
             <div
               key={item.id}
-              style={{
-                display: 'flex',
-                gap: '16px',
-                padding: '16px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                transition: 'border-color 0.2s',
-              }}
+              className="cart-page-style-039"
               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
             >
               <img
                 src={getImageUrl(item.imageUrl)}
                 alt={item.title}
-                style={{ width: '84px', height: '84px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
+                className="cart-page-style-038"
               />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <h3 style={{ fontWeight: 700, fontSize: '0.97rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div className="cart-page-style-037">
+                <div className="cart-page-style-036">
+                  <h3 className="cart-page-style-035">
                     {item.title}
                   </h3>
-                  <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>
+                  <span className="cart-page-style-034">
                     {formatPrice(item.price, item.currency)}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="cart-page-style-033">
                   <div className="qty-control">
                     <button className="qty-btn" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
                       <Minus size={13} />
@@ -268,8 +260,8 @@ export const Cart = () => {
 
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="btn btn-ghost btn-icon"
-                    style={{ color: 'var(--text-muted)' }}
+                    className="btn btn-ghost btn-icon cart-page-style-032"
+                    
                     onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                     title="Remove"
@@ -283,23 +275,23 @@ export const Cart = () => {
         </div>
 
         {/* Right: Checkout Form */}
-        <form onSubmit={handleSubmitCheckout} className="glass-panel-static" style={{ padding: '28px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Checkout Summary</h2>
+        <form onSubmit={handleSubmitCheckout} className="glass-panel-static cart-page-style-031" >
+          <h2 className="cart-page-style-030">Checkout Summary</h2>
 
           {/* Shipping */}
           <div>
-            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary-light)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <p className="cart-page-style-029">
               <MapPin size={13} /> Shipping
             </p>
-            <div className="form-group address-autocomplete-wrapper" style={{ marginBottom: '12px' }}>
+            <div className="form-group address-autocomplete-wrapper cart-page-style-028" >
               <label className="form-label" htmlFor="checkout-address">Delivery Address</label>
-              <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+              <div className="cart-page-style-027">
+                <Search size={14} className="cart-page-style-026" />
                 <input
                   id="checkout-address"
                   type="text"
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
+                  className="form-input cart-page-style-025"
+                  
                   placeholder="Type address, e.g. Dizengoff 100, Tel Aviv..."
                   value={shippingAddress}
                   onChange={(e) => {
@@ -310,8 +302,8 @@ export const Cart = () => {
                   autoComplete="off"
                 />
                 {isAddressLoading && (
-                  <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-                    <span className="spinner spinner-xs" style={{ width: '12px', height: '12px' }} />
+                  <div className="cart-page-style-024">
+                    <span className="spinner spinner-xs cart-page-style-023"  />
                   </div>
                 )}
               </div>
@@ -359,50 +351,39 @@ export const Cart = () => {
                 type="checkbox"
                 checked={saveAddress}
                 onChange={(e) => setSaveAddress(e.target.checked)}
-                style={{ marginTop: '2px', accentColor: 'var(--primary)', cursor: 'pointer', flexShrink: 0 }}
+                className="cart-page-style-022"
               />
               <div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                <span className="cart-page-style-021">
                   Remember address for next time
                 </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, display: 'block', marginTop: '2px' }}>
+                <span className="cart-page-style-020">
                   📍 The address will be saved locally in your browser for a faster checkout next time.
                 </span>
               </div>
             </label>
           </div>
 
-          <div className="divider" style={{ margin: 0 }} />
+          <div className="divider cart-page-style-019"  />
 
           {/* Payment */}
           <div>
-            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <p className="cart-page-style-018">
               <CreditCard size={13} /> Payment (Demo)
             </p>
 
             {/* Saved card banner */}
             {savedCard && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(20,184,166,0.08)',
-                border: '1px solid rgba(20,184,166,0.2)',
-                marginBottom: '12px',
-                fontSize: '0.82rem',
-                color: 'var(--text-secondary)'
-              }}>
-                <CreditCard size={15} style={{ color: 'var(--secondary)', flexShrink: 0 }} />
+              <div className="cart-page-style-017">
+                <CreditCard size={15} className="cart-page-style-016" />
                 <span>
-                  Saved card: <strong style={{ color: 'var(--text-primary)' }}>•••• •••• •••• {savedCard.last4}</strong> — expires <strong style={{ color: 'var(--text-primary)' }}>{savedCard.expiry}</strong>
+                  Saved card: <strong className="cart-page-style-015">•••• •••• •••• {savedCard.last4}</strong> — expires <strong className="cart-page-style-014">{savedCard.expiry}</strong>
                 </span>
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="cart-page-style-013">
+              <div className="form-group cart-page-style-012" >
                 <label className="form-label" htmlFor="checkout-card">Card Number</label>
                 <input
                   id="checkout-card"
@@ -422,8 +403,8 @@ export const Cart = () => {
                   required={!savedCard}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="cart-page-style-011">
+                <div className="form-group cart-page-style-010" >
                   <label className="form-label" htmlFor="checkout-expiry">Expiry</label>
                   <input
                     id="checkout-expiry"
@@ -442,7 +423,7 @@ export const Cart = () => {
                     required
                   />
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="form-group cart-page-style-009" >
                   <label className="form-label" htmlFor="checkout-cvv">CVV</label>
                   <input
                     id="checkout-cvv"
@@ -479,13 +460,13 @@ export const Cart = () => {
                   type="checkbox"
                   checked={saveCard}
                   onChange={(e) => setSaveCard(e.target.checked)}
-                  style={{ marginTop: '2px', accentColor: 'var(--primary)', cursor: 'pointer', flexShrink: 0 }}
+                  className="cart-page-style-008"
                 />
                 <div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                  <span className="cart-page-style-007">
                     Remember card for next time
                   </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, display: 'block', marginTop: '2px' }}>
+                  <span className="cart-page-style-006">
                     🔒 Only the last 4 digits &amp; expiry are stored locally. Your full card number and CVV are <strong>never saved</strong>.
                   </span>
                 </div>
@@ -493,12 +474,12 @@ export const Cart = () => {
             </div>
           </div>
 
-          <div className="divider" style={{ margin: 0 }} />
+          <div className="divider cart-page-style-005"  />
 
           {/* Total + CTA */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Grand Total</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 900, fontFamily: 'var(--font-heading)' }}>
+          <div className="cart-page-style-004">
+            <span className="cart-page-style-003">Grand Total</span>
+            <span className="cart-page-style-002">
               {getCartTotalFormatted()}
             </span>
           </div>
@@ -506,8 +487,8 @@ export const Cart = () => {
           <button
             id="checkout-submit-btn"
             type="submit"
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+            className="btn btn-primary btn-lg cart-page-style-001"
+            
             disabled={isSubmitting}
           >
             {isSubmitting ? (

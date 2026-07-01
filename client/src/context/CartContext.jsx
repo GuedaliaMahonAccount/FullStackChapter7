@@ -7,18 +7,19 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth();
 
   const getCartKey = (currentUser) => {
-    return currentUser ? `c2c_cart_${currentUser.id || currentUser._id}` : 'c2c_cart_guest';
+    return currentUser ? `c2c_cart_${currentUser.id || currentUser._id}` : null;
   };
 
-  const [cart, setCart] = useState(() => {
-    // Initial load: we might not have the user yet, but we'll re-run when user changes
-    const savedCart = localStorage.getItem('c2c_cart_guest');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const [cart, setCart] = useState([]);
 
   // Load cart when user changes
   useEffect(() => {
     const key = getCartKey(user);
+    if (!key) {
+      localStorage.removeItem('c2c_cart_guest');
+      setCart([]);
+      return;
+    }
     const savedCart = localStorage.getItem(key);
     setCart(savedCart ? JSON.parse(savedCart) : []);
   }, [user]);
@@ -26,10 +27,16 @@ export const CartProvider = ({ children }) => {
   // Save cart whenever cart or user changes
   useEffect(() => {
     const key = getCartKey(user);
+    if (!key) return;
     localStorage.setItem(key, JSON.stringify(cart));
   }, [cart, user]);
 
   const addToCart = (product, quantity = 1) => {
+    if (!user) {
+      alert('Please log in to add items to your cart.');
+      return;
+    }
+
     const existingItem = cart.find((item) => item.id === product.id);
     const currentQty = existingItem ? existingItem.quantity : 0;
     const newQty = currentQty + quantity;

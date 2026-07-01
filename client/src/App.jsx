@@ -25,10 +25,10 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <div className="app-layout-style-002">
             <Navbar onToggleCart={() => setIsCartOpen(!isCartOpen)} />
 
-            <div style={{ flex: 1 }}>
+            <div className="app-layout-style-001">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />

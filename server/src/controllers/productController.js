@@ -221,6 +221,44 @@ const suggestDescription = async (req, res, next) => {
   }
 };
 
+const searchPexels = async (req, res, next) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query is required.'
+      });
+    }
+
+    const apiKey = process.env.PEXELS_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pexels API key not configured on server.'
+      });
+    }
+
+    const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=9`, {
+      headers: {
+        Authorization: apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Pexels API responded with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return res.status(200).json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProducts,
   getProductDetail,
@@ -228,6 +266,8 @@ module.exports = {
   deleteProductListing,
   updateProductListing,
   getMyProducts,
-  suggestDescription
+  suggestDescription,
+  searchPexels
 };
+
 

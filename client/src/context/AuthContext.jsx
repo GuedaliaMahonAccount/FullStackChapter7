@@ -17,6 +17,12 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Skip fetching if user details are already populated (e.g. immediately after login)
+      if (user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(`${API_URL}/auth/profile`, {
           headers: {

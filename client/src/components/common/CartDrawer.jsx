@@ -24,27 +24,12 @@ export const CartDrawer = ({ isOpen, onClose }) => {
       <aside className="cart-drawer">
 
         {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--border)',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShoppingBag size={20} style={{ color: 'var(--primary-light)' }} />
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Your Basket</h2>
+        <div className="cart-drawer-style-021">
+          <div className="cart-drawer-style-020">
+            <ShoppingBag size={20} className="cart-drawer-style-019" />
+            <h2 className="cart-drawer-style-018">Your Basket</h2>
             {cart.length > 0 && (
-              <span style={{
-                background: 'var(--primary-glow)',
-                border: '1px solid var(--primary-border)',
-                color: 'var(--primary-light)',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-full)',
-              }}>
+              <span className="cart-drawer-style-017">
                 {cart.length} {cart.length === 1 ? 'item' : 'items'}
               </span>
             )}
@@ -60,14 +45,14 @@ export const CartDrawer = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="cart-drawer-style-016">
           {cart.length === 0 ? (
-            <div className="empty-state" style={{ height: '100%' }}>
+            <div className="empty-state cart-drawer-style-015" >
               <ShoppingBag size={52} className="empty-state-icon" />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>
+              <p className="cart-drawer-style-014">
                 Your cart is empty
               </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              <p className="cart-drawer-style-013">
                 Add items from the marketplace to get started
               </p>
             </div>
@@ -75,15 +60,7 @@ export const CartDrawer = ({ isOpen, onClose }) => {
             cart.map((item) => (
               <div
                 key={item.id}
-                style={{
-                  display: 'flex',
-                  gap: '14px',
-                  padding: '14px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'border-color 0.2s',
-                }}
+                className="cart-drawer-style-012"
                 onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-hover)'}
                 onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
               >
@@ -91,19 +68,19 @@ export const CartDrawer = ({ isOpen, onClose }) => {
                 <img
                   src={getImageUrl(item.imageUrl)}
                   alt={item.title}
-                  style={{ width: '68px', height: '68px', objectFit: 'cover', borderRadius: 'var(--radius-xs)', flexShrink: 0 }}
+                  className="cart-drawer-style-011"
                 />
 
                 {/* Details */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', minWidth: 0 }}>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="cart-drawer-style-010">
+                  <h4 className="cart-drawer-style-009">
                     {item.title}
                   </h4>
-                  <span style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>
+                  <span className="cart-drawer-style-008">
                     {formatPrice(item.price, item.currency)}
                   </span>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="cart-drawer-style-007">
                     {/* Qty */}
                     <div className="qty-control">
                       <button
@@ -126,9 +103,9 @@ export const CartDrawer = ({ isOpen, onClose }) => {
                     {/* Remove */}
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="btn btn-ghost btn-icon"
+                      className="btn btn-ghost btn-icon cart-drawer-style-006"
                       title="Remove item"
-                      style={{ color: 'var(--text-muted)' }}
+                      
                       onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
                       onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                     >
@@ -143,10 +120,10 @@ export const CartDrawer = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         {cart.length > 0 && (
-          <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '14px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Subtotal</span>
-              <span style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'var(--font-heading)' }}>
+          <div className="cart-drawer-style-005">
+            <div className="cart-drawer-style-004">
+              <span className="cart-drawer-style-003">Subtotal</span>
+              <span className="cart-drawer-style-002">
                 {(() => {
                   if (cart.length === 0) return '$0.00';
                   const firstCurrency = cart[0].currency || 'USD';
@@ -163,8 +140,8 @@ export const CartDrawer = ({ isOpen, onClose }) => {
             <button
               id="cart-checkout-btn"
               onClick={handleCheckoutClick}
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+              className="btn btn-primary btn-lg cart-drawer-style-001"
+              
             >
               Proceed to Checkout <ArrowRight size={16} />
             </button>

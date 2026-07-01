@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useFetch } from '../hooks/useFetch';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useFetch, cachedExternalFetch } from '../hooks/useFetch';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
@@ -58,7 +58,7 @@ export const ProductDetail = () => {
   const fetchReviews = async () => {
     setReviewsLoading(true);
     try {
-      const res = await get(`/reviews/product/${id}`);
+      const res = await get(`/reviews/product/${id}`, { ttl: Infinity }); // Cached infinitely (until reviews change)
       if (res.success) {
         setReviewsData(res.data);
       }
@@ -98,7 +98,7 @@ export const ProductDetail = () => {
     const fetchIlsConversion = async () => {
       setIsIlsConverting(true);
       try {
-        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=ILS`);
+        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=ILS`, { ttl: 60 * 60 * 1000 }); // 60 mins cache
         if (result.success && result.data && result.data.rates && result.data.rates.ILS) {
           setIlsConvertedPrice(formatPrice(result.data.rates.ILS, 'ILS'));
         }
@@ -128,7 +128,7 @@ export const ProductDetail = () => {
     const fetchCustomConversion = async () => {
       setIsCustomConverting(true);
       try {
-        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=${customCurrency}`);
+        const result = await get(`/currency/convert?amount=${product.price}&from=${product.currency}&to=${customCurrency}`, { ttl: 60 * 60 * 1000 }); // 60 mins cache
         if (result.success && result.data && result.data.rates && result.data.rates[customCurrency]) {
           setCustomConvertedPrice(formatPrice(result.data.rates[customCurrency], customCurrency));
         }
@@ -151,17 +151,12 @@ export const ProductDetail = () => {
     
     setIsTranslating(true);
     try {
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(product.description)}&langpair=en|he`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.responseData && data.responseData.translatedText) {
-          setTranslatedDesc(data.responseData.translatedText);
-          setShowTranslation(true);
-        } else {
-          alert('Could not translate text. Please try again.');
-        }
+      const data = await cachedExternalFetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(product.description)}&langpair=en|he`, { ttl: Infinity }); // Cached infinitely (translation never changes)
+      if (data && data.responseData && data.responseData.translatedText) {
+        setTranslatedDesc(data.responseData.translatedText);
+        setShowTranslation(true);
       } else {
-        alert('Translation service error. Please try again.');
+        alert('Could not translate text. Please try again.');
       }
     } catch (err) {
       console.error('Error translating text:', err);
@@ -175,7 +170,7 @@ export const ProductDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const result = await get(`/products/${id}`);
+        const result = await get(`/products/${id}`, { ttl: Infinity }); // Cached infinitely (invalidated on CUD/order)
         if (result.success) setProduct(result.data);
       } catch (err) {
         setErrorMsg(err.message || 'Failed to load product details.');
@@ -213,12 +208,9 @@ export const ProductDetail = () => {
     const fetchWeather = async () => {
       setWeatherLoading(true);
       try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${product.latitude}&longitude=${product.longitude}&current_weather=true`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.current_weather) {
-            setWeatherData(data.current_weather);
-          }
+        const data = await cachedExternalFetch(`https://api.open-meteo.com/v1/forecast?latitude=${product.latitude}&longitude=${product.longitude}&current_weather=true`, { ttl: 60 * 60 * 1000 }); // 60 minutes weather cache
+        if (data && data.current_weather) {
+          setWeatherData(data.current_weather);
         }
       } catch (err) {
         console.error('Error fetching weather:', err);
@@ -305,20 +297,18 @@ export const ProductDetail = () => {
         const userLat = parseFloat(userCoords.lat);
         const userLng = parseFloat(userCoords.lng);
 
-        const response = await fetch(
+        const data = await cachedExternalFetch(
           `http://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${prodLng},${prodLat}?overview=false`,
-          { signal: controller.signal }
+          { signal: controller.signal, ttl: Infinity } // Cached infinitely (distance doesn't change)
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.code === 'Ok' && data.routes && data.routes.length > 0) {
-            const route = data.routes[0];
-            setOsrmData({
-              duration: route.duration, // seconds
-              distance: route.distance  // meters
-            });
-          }
+        if (data && data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          setOsrmData({
+            boxShadow: 'none', // dummy property to match structure or keep OSRM data mapping
+            duration: route.duration, // seconds
+            distance: route.distance  // meters
+          });
         }
       } catch (err) {
         if (err.name === 'AbortError') {
@@ -349,52 +339,43 @@ export const ProductDetail = () => {
         const barcodeStr = product.barcode.trim();
 
         if (catName === 'Books & Education') {
-          const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcodeStr}&format=json&jscmd=data`);
-          if (response.ok) {
-            const data = await response.json();
-            const key = `ISBN:${barcodeStr}`;
-            if (data && data[key]) {
-              setBarcodeData({
-                type: 'book',
-                title: data[key].title,
-                authors: data[key].authors?.map(a => a.name).join(', ') || 'Unknown',
-                publishers: data[key].publishers?.map(p => p.name).join(', ') || 'Unknown',
-                publishDate: data[key].publish_date,
-                pages: data[key].pagination,
-                cover: data[key].cover?.medium
-              });
-            }
+          const data = await cachedExternalFetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcodeStr}&format=json&jscmd=data`, { ttl: Infinity }); // Cached infinitely
+          const key = `ISBN:${barcodeStr}`;
+          if (data && data[key]) {
+            setBarcodeData({
+              type: 'book',
+              title: data[key].title,
+              authors: data[key].authors?.map(a => a.name).join(', ') || 'Unknown',
+              publishers: data[key].publishers?.map(p => p.name).join(', ') || 'Unknown',
+              publishDate: data[key].publish_date,
+              pages: data[key].pagination,
+              cover: data[key].cover?.medium
+            });
           }
         } else if (catName === 'Food & Grocery') {
-          const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcodeStr}.json`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.status === 1 && data.product) {
-              const p = data.product;
-              setBarcodeData({
-                type: 'food',
-                brand: p.brands,
-                grade: p.nutrition_grades?.toUpperCase(),
-                allergens: p.allergens ? p.allergens.replace(/en:/g, '').split(',') : [],
-                ingredients: p.ingredients_text,
-                image: p.image_url || p.image_front_url
-              });
-            }
+          const data = await cachedExternalFetch(`https://world.openfoodfacts.org/api/v2/product/${barcodeStr}.json`, { ttl: Infinity }); // Cached infinitely
+          if (data && data.status === 1 && data.product) {
+            const p = data.product;
+            setBarcodeData({
+              type: 'food',
+              brand: p.brands,
+              grade: p.nutrition_grades?.toUpperCase(),
+              allergens: p.allergens ? p.allergens.replace(/en:/g, '').split(',') : [],
+              ingredients: p.ingredients_text,
+              image: p.image_url || p.image_front_url
+            });
           }
         } else {
-          const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcodeStr}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.items && data.items.length > 0) {
-              const item = data.items[0];
-              setBarcodeData({
-                type: 'general',
-                brand: item.brand,
-                model: item.model,
-                description: item.description,
-                specs: item.specifications
-              });
-            }
+          const data = await cachedExternalFetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcodeStr}`, { ttl: Infinity }); // Cached infinitely
+          if (data && data.items && data.items.length > 0) {
+            const item = data.items[0];
+            setBarcodeData({
+              type: 'general',
+              brand: item.brand,
+              model: item.model,
+              description: item.description,
+              specs: item.specifications
+            });
           }
         }
       } catch (err) {
@@ -423,7 +404,7 @@ export const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="loading-center" style={{ height: '60vh' }}>
+      <div className="loading-center product-detail-style-132" >
         <div className="spinner spinner-lg" />
       </div>
     );
@@ -431,11 +412,11 @@ export const ProductDetail = () => {
 
   if (errorMsg || !product) {
     return (
-      <div style={{ maxWidth: '520px', margin: '80px auto', textAlign: 'center', padding: '20px' }}>
-        <h2 style={{ color: 'var(--status-cancelled)', marginBottom: '12px', fontSize: '1.4rem' }}>
+      <div className="product-detail-style-131">
+        <h2 className="product-detail-style-130">
           Product not found
         </h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+        <p className="product-detail-style-129">
           {errorMsg || 'This listing may have been removed or is unavailable.'}
         </p>
         <button onClick={() => navigate('/')} className="btn btn-secondary">
@@ -448,14 +429,14 @@ export const ProductDetail = () => {
   const hasLocation = product.latitude && product.longitude;
 
   return (
-    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="page-container product-detail-style-128" >
 
       {/* Back Button */}
       <div>
         <button
           onClick={() => navigate(-1)}
-          className="btn btn-ghost btn-sm"
-          style={{ paddingLeft: 0 }}
+          className="btn btn-ghost btn-sm product-detail-style-127"
+          
         >
           <ChevronLeft size={18} /> Back
         </button>
@@ -465,31 +446,31 @@ export const ProductDetail = () => {
       <div className="split-layout">
 
         {/* Left: Image + Description */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="product-detail-style-126">
 
           {/* Image */}
           <div
-            className="glass-panel-static"
-            style={{ height: '400px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 0 }}
+            className="glass-panel-static product-detail-style-125"
+            
           >
             <img
               src={getImageUrl(product.imageUrl)}
               alt={product.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+              className="product-detail-style-124"
               onMouseEnter={(e) => e.target.style.transform = 'scale(1.03)'}
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
             />
           </div>
 
           {/* Description */}
-          <div className="glass-panel-static" style={{ padding: '28px', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h2 style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', fontWeight: 600, margin: 0 }}>
+          <div className="glass-panel-static product-detail-style-123" >
+            <div className="product-detail-style-122">
+              <h2 className="product-detail-style-121">
                 Product Description
               </h2>
               <button
-                className="btn btn-ghost btn-sm"
-                style={{ gap: '6px', fontSize: '0.8rem', padding: '4px 8px', height: '32px' }}
+                className="btn btn-ghost btn-sm product-detail-style-120"
+                
                 onClick={handleTranslateDescription}
                 disabled={isTranslating}
               >
@@ -497,44 +478,44 @@ export const ProductDetail = () => {
                 {isTranslating ? 'Translating...' : showTranslation ? 'Show Original' : 'Translate to Hebrew'}
               </button>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+            <p className="product-detail-style-119">
               {showTranslation ? translatedDesc : product.description}
             </p>
           </div>
 
           {/* Barcode Specifications Card */}
           {barcodeLoading && (
-            <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <div className="spinner spinner-sm" style={{ marginRight: '8px' }} />
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Retrieving barcode specifications...</span>
+            <div className="glass-panel-static product-detail-style-118" >
+              <div className="spinner spinner-sm product-detail-style-117"  />
+              <span className="product-detail-style-116">Retrieving barcode specifications...</span>
             </div>
           )}
 
           {!barcodeLoading && barcodeData && (
-            <div className="glass-panel-static animate-in" style={{ padding: '28px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="glass-panel-static animate-in product-detail-style-115" >
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="product-detail-style-114">
+                <h3 className="product-detail-style-113">
                   Barcode Metadata Specification
                 </h3>
-                <span className="badge badge-teal" style={{ fontSize: '0.7rem' }}>
+                <span className="badge badge-teal product-detail-style-112" >
                   {barcodeData.type === 'food' ? 'Open Food Facts' : barcodeData.type === 'book' ? 'Open Library' : 'UPCitemdb'}
                 </span>
               </div>
 
               {barcodeData.type === 'food' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div className="product-detail-style-111">
+                  <div className="product-detail-style-110">
                     {barcodeData.brand && (
-                      <div style={{ flex: 1, minWidth: '120px' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Brand</span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{barcodeData.brand}</span>
+                      <div className="product-detail-style-109">
+                        <span className="product-detail-style-108">Brand</span>
+                        <span className="product-detail-style-107">{barcodeData.brand}</span>
                       </div>
                     )}
                     {barcodeData.grade && (
-                      <div style={{ flex: 1, minWidth: '120px' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Nutri-Score</span>
-                        <span className={`badge-nutri badge-nutri-${barcodeData.grade.toLowerCase()}`} style={{ display: 'inline-block', fontWeight: 950, padding: '4px 12px', borderRadius: '4px', fontSize: '1.05rem', color: '#fff' }}>
+                      <div className="product-detail-style-106">
+                        <span className="product-detail-style-105">Nutri-Score</span>
+                        <span className={`badge-nutri badge-nutri-${barcodeData.grade.toLowerCase()} product-detail-nutri-badge`}>
                           {barcodeData.grade}
                         </span>
                       </div>
@@ -543,10 +524,10 @@ export const ProductDetail = () => {
 
                   {barcodeData.allergens && barcodeData.allergens.length > 0 && (
                     <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Declared Allergens</span>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <span className="product-detail-style-103">Declared Allergens</span>
+                      <div className="product-detail-style-102">
                         {barcodeData.allergens.filter(Boolean).map((alg, index) => (
-                          <span key={index} className="badge badge-error" style={{ fontSize: '0.72rem', textTransform: 'capitalize' }}>
+                          <span key={index} className="badge badge-error product-detail-style-101" >
                             ⚠️ {alg.trim()}
                           </span>
                         ))}
@@ -556,8 +537,8 @@ export const ProductDetail = () => {
 
                   {barcodeData.ingredients && (
                     <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Ingredients List</span>
-                      <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                      <span className="product-detail-style-100">Ingredients List</span>
+                      <p className="product-detail-style-099">
                         {barcodeData.ingredients}
                       </p>
                     </div>
@@ -566,30 +547,30 @@ export const ProductDetail = () => {
               )}
 
               {barcodeData.type === 'book' && (
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'start', flexWrap: 'wrap' }}>
+                <div className="product-detail-style-098">
                   {barcodeData.cover && (
-                    <div style={{ width: '100px', height: '140px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
-                      <img src={barcodeData.cover} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="product-detail-style-097">
+                      <img src={barcodeData.cover} alt="Cover Preview" className="product-detail-style-096" />
                     </div>
                   )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '200px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="product-detail-style-095">
+                    <div className="product-detail-style-094">
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Authors</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.authors}</span>
+                        <span className="product-detail-style-093">Authors</span>
+                        <span className="product-detail-style-092">{barcodeData.authors}</span>
                       </div>
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Publishers</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.publishers}</span>
+                        <span className="product-detail-style-091">Publishers</span>
+                        <span className="product-detail-style-090">{barcodeData.publishers}</span>
                       </div>
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Publication Date</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.publishDate || 'N/A'}</span>
+                        <span className="product-detail-style-089">Publication Date</span>
+                        <span className="product-detail-style-088">{barcodeData.publishDate || 'N/A'}</span>
                       </div>
                       {barcodeData.pages && (
                         <div>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Pages count</span>
-                          <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.pages}</span>
+                          <span className="product-detail-style-087">Pages count</span>
+                          <span className="product-detail-style-086">{barcodeData.pages}</span>
                         </div>
                       )}
                     </div>
@@ -598,25 +579,25 @@ export const ProductDetail = () => {
               )}
 
               {barcodeData.type === 'general' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="product-detail-style-085">
+                  <div className="product-detail-style-084">
                     {barcodeData.brand && (
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Brand</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.brand}</span>
+                        <span className="product-detail-style-083">Brand</span>
+                        <span className="product-detail-style-082">{barcodeData.brand}</span>
                       </div>
                     )}
                     {barcodeData.model && (
                       <div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block' }}>Model</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{barcodeData.model}</span>
+                        <span className="product-detail-style-081">Model</span>
+                        <span className="product-detail-style-080">{barcodeData.model}</span>
                       </div>
                     )}
                   </div>
                   {barcodeData.description && (
                     <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Specification Details</span>
-                      <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                      <span className="product-detail-style-079">Specification Details</span>
+                      <p className="product-detail-style-078">
                         {barcodeData.description}
                       </p>
                     </div>
@@ -628,29 +609,29 @@ export const ProductDetail = () => {
         </div>
 
         {/* Right: Summary + Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div className="product-detail-style-077">
 
           {/* Summary Card */}
-          <div className="glass-panel-static" style={{ padding: '28px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="glass-panel-static product-detail-style-076" >
 
             {/* Category badge */}
             <div>
               <span className="badge badge-primary">{product.category?.name}</span>
             </div>
 
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, lineHeight: 1.2 }}>
+            <h1 className="product-detail-style-075">
               {product.title}
             </h1>
 
             {(reviewsData?.count || 0) > 0 ? (
               <div className="product-rating-summary">
-                <span style={{ color: '#fbbf24', display: 'flex', gap: '2px', fontSize: '1rem' }}>
+                <span className="product-detail-style-074">
                   {Array.from({ length: 5 }).map((_, idx) => (
                     <span key={idx} style={{ opacity: idx < Math.round(reviewsData?.average || 0) ? 1 : 0.25 }}>★</span>
                   ))}
                 </span>
-                <span style={{ fontWeight: 700, color: '#fff' }}>{reviewsData?.average || 0}</span>
-                <span style={{ color: 'var(--text-muted)' }}>({reviewsData?.count || 0} reviews)</span>
+                <span className="product-detail-style-073">{reviewsData?.average || 0}</span>
+                <span className="product-detail-style-072">({reviewsData?.count || 0} reviews)</span>
               </div>
             ) : (
               <div className="product-rating-summary-empty">
@@ -658,33 +639,33 @@ export const ProductDetail = () => {
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--secondary)', fontFamily: 'var(--font-heading)' }}>
+            <div className="product-detail-style-071">
+              <span className="product-detail-style-070">
                 {formatPrice(product.price, product.currency)}
               </span>
               {product.currency !== 'ILS' && (
-                <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
+                <span className="product-detail-style-069">
                   {isIlsConverting ? '(calculating...)' : ilsConvertedPrice ? `(≈ ${ilsConvertedPrice})` : ''}
                 </span>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div className="product-detail-style-068">
+              <span className="product-detail-style-067">
                 <Box size={15} />
                 {product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock'}
               </span>
             </div>
 
             {/* Interactive Currency Converter Panel */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Globe size={13} style={{ color: 'var(--primary-light)' }} /> Currency Converter (Frankfurter)
+            <div className="product-detail-style-066">
+              <span className="product-detail-style-065">
+                <Globe size={13} className="product-detail-style-064" /> Currency Converter (Frankfurter)
               </span>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="product-detail-style-063">
                 <select
-                  className="form-input"
-                  style={{ height: '32px', fontSize: '0.8rem', padding: '4px 8px', flex: 1 }}
+                  className="form-input product-detail-style-062"
+                  
                   value={customCurrency}
                   onChange={(e) => handleCustomConvert(e.target.value)}
                 >
@@ -695,36 +676,25 @@ export const ProductDetail = () => {
                   <option value="JPY">Convert to JPY (¥)</option>
                   <option value="CAD">Convert to CAD (C$)</option>
                 </select>
-                <div style={{ flex: 1.2, fontSize: '0.85rem', fontWeight: 700, textAlign: 'right' }}>
+                <div className="product-detail-style-061">
                   {isCustomConverting ? (
-                    <span style={{ color: 'var(--text-muted)' }}><RefreshCw size={12} className="spinner" style={{ display: 'inline', marginRight: '4px' }} /> Calculating...</span>
+                    <span className="product-detail-style-060"><RefreshCw size={12} className="spinner product-detail-style-059"  /> Calculating...</span>
                   ) : customConvertedPrice ? (
-                    <span className="text-gradient" style={{ fontSize: '1rem' }}>{customConvertedPrice}</span>
+                    <span className="text-gradient product-detail-style-058" >{customConvertedPrice}</span>
                   ) : (
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Select currency</span>
+                    <span className="product-detail-style-057">Select currency</span>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="divider" style={{ margin: '4px 0' }} />
+            <div className="divider product-detail-style-056"  />
 
           {(() => {
               const isOwnProduct = user && product.seller && user.id === product.seller.id;
               if (isOwnProduct) {
                 return (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '14px 20px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.25)',
-                    color: 'var(--primary-light)',
-                    fontSize: '0.9rem',
-                    fontWeight: 600
-                  }}>
+                  <div className="product-detail-style-055">
                     <Lock size={16} />
                     This is your listing — you can't buy your own product.
                   </div>
@@ -736,8 +706,8 @@ export const ProductDetail = () => {
               if (product.stockQuantity <= 0) {
                 return (
                   <button
-                    className="btn btn-lg btn-primary"
-                    style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+                    className="btn btn-lg btn-primary product-detail-style-054"
+                    
                     disabled
                   >
                     <ShoppingCart size={18} /> Add to Cart
@@ -746,10 +716,10 @@ export const ProductDetail = () => {
               }
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="product-detail-style-053">
                   {product.stockQuantity > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Quantity:</span>
+                    <div className="product-detail-style-052">
+                      <span className="product-detail-style-051">Quantity:</span>
                       <div className="qty-control">
                         <button 
                           className="qty-btn" 
@@ -779,8 +749,8 @@ export const ProductDetail = () => {
                               removeFromCart(product.id);
                               setQty(1); // Reset local state
                             }}
-                            className="btn btn-lg btn-secondary"
-                            style={{ width: '100%', borderRadius: 'var(--radius-sm)', color: 'var(--status-cancelled)' }}
+                            className="btn btn-lg btn-secondary product-detail-style-050"
+                            
                           >
                             Remove from Cart
                           </button>
@@ -788,8 +758,8 @@ export const ProductDetail = () => {
                       }
                       return (
                         <button
-                          className="btn btn-lg btn-primary"
-                          style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
+                          className="btn btn-lg btn-primary product-detail-style-049"
+                          
                           disabled
                         >
                           Add to Cart
@@ -806,8 +776,7 @@ export const ProductDetail = () => {
                             setAdded(true);
                             setTimeout(() => setAdded(false), 2200);
                           }}
-                          className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
-                          style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
+                          className={`btn btn-lg product-detail-cart-action-btn ${added ? 'btn-accent' : 'btn-primary'}`}
                         >
                           {added ? (
                             <><CheckCircle size={18} /> Added to Cart!</>
@@ -821,10 +790,10 @@ export const ProductDetail = () => {
                     // If already in cart
                     if (qty === currentQty) {
                       return (
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div className="product-detail-style-047">
                           <button
-                            className="btn btn-lg btn-secondary"
-                            style={{ flex: 1, borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', color: 'var(--status-cancelled)', padding: '10px 4px' }}
+                            className="btn btn-lg btn-secondary product-detail-style-046"
+                            
                             onClick={() => {
                               removeFromCart(product.id);
                               setQty(1); // Reset local state
@@ -833,8 +802,8 @@ export const ProductDetail = () => {
                             Remove
                           </button>
                           <div
-                            className="btn btn-lg btn-accent"
-                            style={{ flex: 1.2, borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'default', pointerEvents: 'none' }}
+                            className="btn btn-lg btn-accent product-detail-style-045"
+                            
                           >
                             <CheckCircle size={16} /> Added ({currentQty})
                           </div>
@@ -849,8 +818,7 @@ export const ProductDetail = () => {
                           setAdded(true);
                           setTimeout(() => setAdded(false), 2200);
                         }}
-                        className={`btn btn-lg ${added ? 'btn-accent' : 'btn-primary'}`}
-                        style={{ width: '100%', borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease' }}
+                        className={`btn btn-lg product-detail-cart-action-btn ${added ? 'btn-accent' : 'btn-primary'}`}
                       >
                         {added ? (
                           <><CheckCircle size={18} /> Cart Updated!</>
@@ -865,7 +833,7 @@ export const ProductDetail = () => {
             })()}
 
             {product.stockQuantity === 0 && (
-              <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--status-cancelled)' }}>
+              <p className="product-detail-style-043">
                 This item is currently out of stock.
               </p>
             )}
@@ -873,20 +841,20 @@ export const ProductDetail = () => {
 
           {/* Seller Card */}
           <div
-            className="glass-panel-static"
-            style={{ padding: '20px 24px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '14px' }}
+            className="glass-panel-static product-detail-style-042"
+            
           >
             <div className="avatar avatar-lg">
               {product.seller?.fullName?.charAt(0)?.toUpperCase() || <User size={22} />}
             </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '3px' }}>
+            <div className="product-detail-style-041">
+              <p className="product-detail-style-040">
                 Seller
               </p>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <h3 className="product-detail-style-039">
                 {user && product.seller && user.id === product.seller.id ? 'Me (אני)' : product.seller?.fullName}
               </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p className="product-detail-style-038">
                 {product.seller?.email}
               </p>
             </div>
@@ -895,18 +863,18 @@ export const ProductDetail = () => {
           {/* Weather Widget */}
           {hasLocation && (weatherData || weatherLoading) && (
             <div className="glass-panel-static weather-card">
-              <h3 className="section-title weather-header" style={{ margin: 0 }}>
-                <Globe size={14} style={{ color: 'var(--primary-light)' }} /> Pick-up Location Weather
+              <h3 className="section-title weather-header product-detail-style-037" >
+                <Globe size={14} className="product-detail-style-036" /> Pick-up Location Weather
               </h3>
               {weatherLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+                <div className="product-detail-style-035">
                   <span className="spinner spinner-sm" />
                 </div>
               ) : (
                 (() => {
                   const advice = getWeatherAdvice(weatherData.weathercode, weatherData.temperature);
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                    <div className="product-detail-style-034">
                       <div className="weather-info-row">
                         <span className="weather-condition">{advice.condition}</span>
                         <span className="weather-temp">{weatherData.temperature}°C</span>
@@ -923,25 +891,25 @@ export const ProductDetail = () => {
 
           {/* Map */}
           {hasLocation && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 className="section-title" style={{ fontSize: '0.95rem' }}>
-                <MapPin size={16} style={{ color: 'var(--primary)' }} />
+            <div className="product-detail-style-033">
+              <h3 className="section-title product-detail-style-032" >
+                <MapPin size={16} className="product-detail-style-031" />
                 Sale Location
               </h3>
               {product.address && (
-                <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginTop: '-4px' }}>
+                <p className="product-detail-style-030">
                   <strong>Address:</strong> {product.address}
                 </p>
               )}
 
               {/* OSRM Route Info / Fallback straight-line distance */}
               {hasLocation && (
-                <div style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginTop: '-4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: 'var(--primary-light)', fontWeight: 600 }}>Proximity:</span>
+                <div className="product-detail-style-029">
+                  <span className="product-detail-style-028">Proximity:</span>
                   {osrmLoading ? (
-                    <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><span className="spinner spinner-xs" style={{ width: '10px', height: '10px' }} /> Calculating route...</span>
+                    <span className="product-detail-style-027"><span className="spinner spinner-xs product-detail-style-026"  /> Calculating route...</span>
                   ) : osrmData ? (
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                    <span className="product-detail-style-025">
                       🚗 {Math.round(osrmData.duration / 60)} min drive ({(osrmData.distance / 1000).toFixed(1)} km by road)
                     </span>
                   ) : userCoords ? (
@@ -953,19 +921,19 @@ export const ProductDetail = () => {
                         parseFloat(product.longitude)
                       );
                       return (
-                        <span style={{ color: 'var(--text-secondary)' }}>
+                        <span className="product-detail-style-024">
                           📍 {straightDist.toFixed(1)} km away (straight line)
                         </span>
                       );
                     })()
                   ) : (
-                    <span style={{ color: 'var(--text-muted)' }}>Location permission required for route calculation</span>
+                    <span className="product-detail-style-023">Location permission required for route calculation</span>
                   )}
                 </div>
               )}
               <div
-                className="glass-panel-static"
-                style={{ height: '220px', borderRadius: 'var(--radius-md)', overflow: 'hidden', padding: 0 }}
+                className="glass-panel-static product-detail-style-022"
+                
               >
                 <OpenFreeMap
                   products={[product]}
@@ -983,7 +951,7 @@ export const ProductDetail = () => {
       <div className="divider reviews-section-divider" />
       
       <div className="reviews-section-container">
-        <h3 className="section-title" style={{ fontSize: '1.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h3 className="section-title product-detail-style-021" >
           ⭐ Ratings & Reviews ({reviewsData?.count || 0})
         </h3>
 
@@ -992,33 +960,33 @@ export const ProductDetail = () => {
           {/* Reviews List */}
           <div className="reviews-list-column">
             {(!reviewsData?.reviews || reviewsData.reviews.length === 0) ? (
-              <div className="glass-panel-static" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+              <div className="glass-panel-static product-detail-style-020" >
                 No reviews yet for this product. Be the first to review!
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="product-detail-style-019">
                 {(reviewsData?.reviews || []).map((rev) => (
                   <div 
                     key={rev.id} 
                     className="glass-panel-static review-item-card"
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                    <div className="product-detail-style-018">
+                      <div className="product-detail-style-017">
+                        <span className="product-detail-style-016">
                           {rev.buyer?.fullName || 'Anonymous'}
                         </span>
-                        <span style={{ color: '#fbbf24', fontSize: '0.9rem' }}>
+                        <span className="product-detail-style-015">
                           {Array.from({ length: 5 }).map((_, idx) => (
                             <span key={idx} style={{ opacity: idx < rev.rating ? 1 : 0.2 }}>★</span>
                           ))}
                         </span>
                       </div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      <span className="product-detail-style-014">
                         {new Date(rev.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     {rev.comment && (
-                      <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                      <p className="product-detail-style-013">
                         {rev.comment}
                       </p>
                     )}
@@ -1031,29 +999,33 @@ export const ProductDetail = () => {
           {/* Write a Review Form */}
           <div className="reviews-form-column">
             {user ? (
-              (() => {
+              user.id === product?.sellerId ? (
+                <div className="glass-panel-static product-detail-style-003" >
+                  <p className="product-detail-style-002">You cannot review your own product.</p>
+                </div>
+              ) : (() => {
                 const alreadyReviewed = (reviewsData?.reviews || []).some(r => r.buyerId === user.id || r.buyer_id === user.id);
                 return (
-                  <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#fff' }}>
+                  <div className="glass-panel-static product-detail-style-012" >
+                    <div className="product-detail-style-011">
+                      <h4 className="product-detail-style-010">
                         {alreadyReviewed ? 'Edit Your Review' : 'Leave a Review'}
                       </h4>
                       {alreadyReviewed && (
-                        <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                        <span className="badge badge-success product-detail-style-009" >
                           ✓ Reviewed
                         </span>
                       )}
                     </div>
                     
                     {reviewError && (
-                      <div className="alert alert-error" style={{ padding: '8px 12px', fontSize: '0.78rem' }}>
+                      <div className="alert alert-error product-detail-style-008" >
                         <span>{reviewError}</span>
                       </div>
                     )}
 
-                    <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
+                    <form onSubmit={handleReviewSubmit} className="product-detail-style-007">
+                      <div className="form-group product-detail-style-006" >
                         <label className="form-label">Rating</label>
                         <div className="review-stars-interactive">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -1068,7 +1040,7 @@ export const ProductDetail = () => {
                         </div>
                       </div>
 
-                      <div className="form-group" style={{ marginBottom: 0 }}>
+                      <div className="form-group product-detail-style-005" >
                         <label className="form-label" htmlFor="review-comment-textarea">Comments</label>
                         <textarea
                           id="review-comment-textarea"
@@ -1082,8 +1054,8 @@ export const ProductDetail = () => {
 
                       <button
                         type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', padding: '10px', fontSize: '0.85rem' }}
+                        className="btn btn-primary product-detail-style-004"
+                        
                         disabled={isSubmittingReview}
                       >
                         {isSubmittingReview ? 'Submitting...' : alreadyReviewed ? 'Update Review' : 'Submit Review'}
@@ -1093,8 +1065,8 @@ export const ProductDetail = () => {
                 );
               })()
             ) : (
-              <div className="glass-panel-static" style={{ padding: '24px', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <p style={{ fontSize: '0.85rem' }}>Please <a href="/login" style={{ color: 'var(--primary-light)', textDecoration: 'underline', fontWeight: 600 }}>log in</a> to share your review and rate this product.</p>
+              <div className="glass-panel-static product-detail-style-003" >
+                <p className="product-detail-style-002">Please <Link to="/login" className="product-detail-style-001">log in</Link> to share your review and rate this product.</p>
               </div>
             )}
           </div>

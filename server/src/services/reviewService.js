@@ -1,7 +1,16 @@
-const { Review, User } = require('../models/sql');
+const { Review, User, Product } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
 
 const createReview = async ({ rating, comment, productId, buyerId }, req = null) => {
+  // Prevent user from reviewing their own product
+  const product = await Product.findByPk(productId);
+  if (!product) {
+    throw { statusCode: 404, message: 'Product listing not found.' };
+  }
+  if (product.sellerId === buyerId) {
+    throw { statusCode: 400, message: 'You cannot rate or review your own product.' };
+  }
+
   // Check if buyer already reviewed this product
   const existing = await Review.findOne({
     where: { productId, buyerId }

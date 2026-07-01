@@ -31,7 +31,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await get('/admin/orders');
+      const res = await get('/admin/orders', { ttl: Infinity }); // Cached infinitely (invalidated on order updates)
       if (res.success) {
         setOrders(res.data);
         if (res.data.length > 0) {
@@ -52,7 +52,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await get('/admin/users');
+      const res = await get('/admin/users', { ttl: Infinity }); // Cached infinitely (invalidated on user updates)
       if (res.success) {
         setUsersList(res.data);
       }
@@ -63,6 +63,7 @@ export const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
 
   // Fetch all logs
   const fetchAllLogs = async () => {
@@ -208,14 +209,14 @@ export const AdminDashboard = () => {
       {/* Status Messages */}
       {successMsg && (
         <div className="alert alert-success admin-alert-success">
-          <CheckCircle size={16} style={{ flexShrink: 0 }} />
+          <CheckCircle size={16} className="admin-dashboard-style-034" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
         <div className="alert alert-error admin-alert-error">
-          <AlertCircle size={16} style={{ flexShrink: 0 }} />
+          <AlertCircle size={16} className="admin-dashboard-style-033" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -223,7 +224,7 @@ export const AdminDashboard = () => {
       {/* Loading state */}
       {loading && (
         <div className="loading-center admin-loading">
-          <div className="spinner" style={{ borderTopColor: '#a78bfa' }} />
+          <div className="spinner admin-dashboard-style-032"  />
         </div>
       )}
 
@@ -233,17 +234,17 @@ export const AdminDashboard = () => {
           {/* TAB 1: ORDERS */}
           {activeTab === 'orders' && (
             orders.length === 0 ? (
-              <div className="glass-panel-static" style={{ padding: '60px 40px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-secondary)' }}>No orders registered in the system yet. Place an order first as a buyer.</p>
+              <div className="glass-panel-static admin-dashboard-style-031" >
+                <p className="admin-dashboard-style-030">No orders registered in the system yet. Place an order first as a buyer.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px', alignItems: 'start' }} className="split-layout">
+              <div className="split-layout admin-dashboard-style-029 admin-dashboard-remaining-style-001">
                 
                 {/* Left Side: Order list */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <h3 style={{ fontSize: '1.15rem', color: '#fff' }}>Orders in System</h3>
+                <div className="admin-dashboard-style-028">
+                  <h3 className="admin-dashboard-style-027">Orders in System</h3>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="admin-dashboard-style-026">
                     {orders.map((o) => (
                       <button
                         key={o.id}
@@ -264,13 +265,13 @@ export const AdminDashboard = () => {
                         }}
                       >
                         <div>
-                          <h4 style={{ color: '#fff', fontWeight: 600 }}>Order #{o.id}</h4>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <h4 className="admin-dashboard-style-025">Order #{o.id}</h4>
+                          <span className="admin-dashboard-style-024">
                             Date: {new Date(o.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                          <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700 }}>
+                        <div className="admin-dashboard-style-023">
+                          <span className="admin-dashboard-style-022">
                             ${parseFloat(o.totalPrice).toFixed(2)}
                           </span>
                           <span className={`badge badge-${o.status?.toLowerCase() || 'pending'}`}>
@@ -285,18 +286,18 @@ export const AdminDashboard = () => {
                 {/* Right Side: Update Panel */}
                 <div>
                   {selectedOrder ? (
-                    <div className="glass-panel-static" style={{ padding: '30px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="glass-panel-static admin-dashboard-style-021" >
                       
                       <div>
-                        <h3 style={{ fontSize: '1.25rem', color: '#fff' }}>Modify Order #{selectedOrder.id} Status</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '2px' }}>
+                        <h3 className="admin-dashboard-style-020">Modify Order #{selectedOrder.id} Status</h3>
+                        <p className="admin-dashboard-style-019">
                           Current database status: <strong>{selectedOrder.status}</strong>
                         </p>
                       </div>
 
-                      <form onSubmit={handleUpdateStatusSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <form onSubmit={handleUpdateStatusSubmit} className="admin-dashboard-style-018">
                         
-                        <div className="form-group" style={{ marginBottom: 0 }}>
+                        <div className="form-group admin-dashboard-style-017" >
                           <label className="form-label">New Status</label>
                           <select 
                             className="form-input"
@@ -310,8 +311,8 @@ export const AdminDashboard = () => {
                         </div>
 
                         {status === 'Shipped' && (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '16px', animation: 'fadeIn 0.2s' }}>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
+                          <div className="admin-dashboard-style-016">
+                            <div className="form-group admin-dashboard-style-015" >
                               <label className="form-label">Carrier Partner</label>
                               <input 
                                 type="text" 
@@ -322,7 +323,7 @@ export const AdminDashboard = () => {
                                 required
                               />
                             </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
+                            <div className="form-group admin-dashboard-style-014" >
                               <label className="form-label">Tracking Ref #</label>
                               <input 
                                 type="text" 
@@ -336,7 +337,7 @@ export const AdminDashboard = () => {
                           </div>
                         )}
 
-                        <div className="form-group" style={{ marginBottom: 0 }}>
+                        <div className="form-group admin-dashboard-style-013" >
                           <label className="form-label">Status Notes / Remarks</label>
                           <textarea 
                             className="form-input" 
@@ -350,12 +351,12 @@ export const AdminDashboard = () => {
 
                         <button 
                           type="submit" 
-                          className="btn btn-primary btn-lg" 
-                          style={{ width: '100%', background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', boxShadow: '0 4px 16px rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)' }}
+                          className="btn btn-primary btn-lg admin-dashboard-style-012" 
+                          
                           disabled={isSubmitting}
                         >
                           {isSubmitting ? (
-                            <><span className="spinner spinner-sm" style={{ borderTopColor: '#fff' }} /> Saving…</>
+                            <><span className="spinner spinner-sm admin-dashboard-style-011"  /> Saving…</>
                           ) : 'Update Status & Save'}
                         </button>
 
@@ -363,8 +364,8 @@ export const AdminDashboard = () => {
 
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
-                      <p style={{ color: 'var(--text-muted)' }}>Select an order from the list to update its status logs.</p>
+                    <div className="admin-dashboard-style-010">
+                      <p className="admin-dashboard-style-009">Select an order from the list to update its status logs.</p>
                     </div>
                   )}
                 </div>
@@ -375,7 +376,7 @@ export const AdminDashboard = () => {
           {/* TAB 2: USERS */}
           {activeTab === 'users' && (
             <div className="glass-panel-static admin-panel-card">
-              <h3 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '16px' }}>Manage Users</h3>
+              <h3 className="admin-dashboard-style-008">Manage Users</h3>
               <div className="admin-table-container">
                 <table className="admin-table">
                   <thead>
@@ -385,7 +386,7 @@ export const AdminDashboard = () => {
                       <th className="admin-table-header">Role</th>
                       <th className="admin-table-header">Registered Date</th>
                       <th className="admin-table-header">Account Status</th>
-                      <th className="admin-table-header" style={{ textAlign: 'right' }}>Actions</th>
+                      <th className="admin-table-header admin-dashboard-style-007" >Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -413,7 +414,7 @@ export const AdminDashboard = () => {
                             className={`btn ${user.isBlocked ? 'btn-secondary' : 'btn-primary'} admin-block-btn ${user.isBlocked ? 'blocked' : 'active'}`}
                           >
                             {blockingUserId === user.id ? (
-                              <span className="spinner spinner-xs" style={{ width: '10px', height: '10px' }} />
+                              <span className="spinner spinner-xs admin-dashboard-style-006"  />
                             ) : user.isBlocked ? (
                               <><Unlock size={12} /> Unblock</>
                             ) : (
@@ -432,10 +433,10 @@ export const AdminDashboard = () => {
           {/* TAB 3: LOGS */}
           {activeTab === 'logs' && (
             <div className="glass-panel-static admin-panel-card">
-              <h3 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 className="admin-dashboard-style-005">
                 <Calendar size={18} /> System Audit Trail (MongoDB Logs)
               </h3>
-              <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+              <div className="admin-dashboard-style-004">
                 <table className="admin-table">
                   <thead>
                     <tr className="admin-table-header-row-sticky">
@@ -449,7 +450,7 @@ export const AdminDashboard = () => {
                   <tbody>
                     {logsList.map((log) => (
                       <tr key={log.id} className="admin-table-row-logs">
-                        <td className="admin-table-cell" style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        <td className="admin-table-cell admin-dashboard-style-003" >
                           {new Date(log.createdAt).toLocaleString()}
                         </td>
                         <td className="admin-table-cell">
@@ -462,8 +463,8 @@ export const AdminDashboard = () => {
                             {log.eventType}
                           </span>
                         </td>
-                        <td className="admin-table-cell" style={{ fontWeight: 600 }}>{log.userEmail}</td>
-                        <td className="admin-table-cell" style={{ color: 'var(--text-muted)' }}>{log.ipAddress || '127.0.0.1'}</td>
+                        <td className="admin-table-cell admin-dashboard-style-002" >{log.userEmail}</td>
+                        <td className="admin-table-cell admin-dashboard-style-001" >{log.ipAddress || '127.0.0.1'}</td>
                         <td className="admin-table-cell admin-log-cell-details" title={JSON.stringify(log.details)}>
                           <code className="admin-log-details-code">
                             {JSON.stringify(log.details)}

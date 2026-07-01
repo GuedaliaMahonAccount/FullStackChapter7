@@ -127,7 +127,7 @@ export const OpenFreeMap = ({
 
   return (
     <div style={{ position: 'relative', width: '100%', height, borderRadius: 'inherit' }}>
-      <div ref={mapContainer} style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} />
+      <div ref={mapContainer} className="open-free-map-style-001" />
     </div>
   );
 };
