@@ -21,6 +21,12 @@ export const Home = () => {
   const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'priceAsc' | 'priceDesc' | 'distance'
   const [userCoords, setUserCoords] = useState(null);
 
+  // Pagination states
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  const ITEMS_PER_PAGE = 6;
+
   const { get } = useFetch();
   const { addToCart } = useCart();
 
@@ -74,31 +80,51 @@ export const Home = () => {
     fetchRates();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchProducts = async (currentOffset, append = false) => {
+    if (append) {
+      setIsMoreLoading(true);
+    } else {
       setLoading(true);
-      try {
-        if (categories.length === 0) {
-          const catRes = await get('/categories', { ttl: Infinity }); // Cached infinitely (until categories clear)
-          if (catRes.success) setCategories(catRes.data);
-        }
+    }
 
-        let endpoint = '/products';
-        const params = [];
-        if (selectedCategory) params.push(`categoryId=${selectedCategory}`);
-        if (searchQuery) params.push(`search=${encodeURIComponent(searchQuery)}`);
-        if (params.length > 0) endpoint += `?${params.join('&')}`;
-
-        const prodRes = await get(endpoint, { ttl: Infinity }); // Cached infinitely (invalidated on product CUD/order)
-        if (prodRes.success) setProducts(prodRes.data);
-      } catch (err) {
-        console.error('Error fetching marketplace feed:', err);
-      } finally {
-        setLoading(false);
+    try {
+      if (categories.length === 0) {
+        const catRes = await get('/categories', { ttl: Infinity }); // Cached infinitely (until categories clear)
+        if (catRes.success) setCategories(catRes.data);
       }
-    };
-    fetchData();
+
+      let endpoint = `/products?limit=${ITEMS_PER_PAGE}&offset=${currentOffset}`;
+      if (selectedCategory) endpoint += `&categoryId=${selectedCategory}`;
+      if (searchQuery) endpoint += `&search=${encodeURIComponent(searchQuery)}`;
+
+      const prodRes = await get(endpoint, { ttl: Infinity }); // Cached infinitely (invalidated on product CUD/order)
+      if (prodRes.success) {
+        const newProducts = prodRes.data;
+        if (append) {
+          setProducts(prev => [...prev, ...newProducts]);
+        } else {
+          setProducts(newProducts);
+        }
+        setHasMore(newProducts.length === ITEMS_PER_PAGE);
+      }
+    } catch (err) {
+      console.error('Error fetching marketplace feed:', err);
+    } finally {
+      setLoading(false);
+      setIsMoreLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setOffset(0);
+    fetchProducts(0, false);
   }, [selectedCategory, searchQuery]);
+
+  const handleLoadMore = () => {
+    const nextOffset = offset + ITEMS_PER_PAGE;
+    setOffset(nextOffset);
+    fetchProducts(nextOffset, true);
+  };
 
 
 
@@ -225,7 +251,8 @@ export const Home = () => {
               </button>
             </div>
           ) : (
-            <div className="grid-cols-responsive">
+            <>
+              <div className="grid-cols-responsive">
               {sortedProducts.map((product, i) => {
                 const distance = product.latitude && product.longitude && userCoords
                   ? getDistance(userCoords.lat, userCoords.lng, parseFloat(product.latitude), parseFloat(product.longitude))
@@ -339,8 +366,25 @@ export const Home = () => {
               );
             })}
             </div>
-          )}
-        </div>
+            {hasMore && products.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                <button 
+                  onClick={handleLoadMore} 
+                  disabled={isMoreLoading} 
+                  className="btn btn-secondary"
+                  style={{ minWidth: '150px' }}
+                >
+                  {isMoreLoading ? (
+                    <span className="spinner spinner-xs" />
+                  ) : (
+                    'Load More'
+                  )}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
         {/* Right: Map */}
         <div className="home-map-column">

@@ -2218,6 +2218,29 @@ textarea.form-input {
   white-space: nowrap;
 }
 
+.api-info-endpoint-link {
+  font-family: monospace;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--primary-light);
+  overflow-x: auto;
+  white-space: nowrap;
+  text-decoration: none;
+  display: block;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.api-info-endpoint-link:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: var(--primary-light);
+  text-decoration: underline;
+}
+
 .api-info-description {
   font-size: 0.86rem;
   color: var(--text-secondary);

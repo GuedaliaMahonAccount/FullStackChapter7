@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Navigation, Sun, Languages, Globe, ArrowLeft, Cpu, Sparkles, Map, BookOpen, Apple, Barcode } from 'lucide-react';
+import { MapPin, Navigation, Sun, Languages, Globe, ArrowLeft, Cpu, Sparkles, Map, BookOpen, Apple, Barcode, CreditCard, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const ApiInfo = () => {
@@ -75,6 +75,20 @@ export const ApiInfo = () => {
       endpoint: 'https://api.upcitemdb.com/prod/trial/',
       description: 'Searches generic consumer products (Electronics, Home, Fashion) by UPC/EAN barcodes. Implements a rate-limited free trial query (100 requests/day) with robust fail-safe bypasses.',
       badges: ['100 Req/Day Free', 'General Catalog', 'Fail-Safe Fallback']
+    },
+    {
+      title: 'Payment Gateway (Demo / Simulation)',
+      icon: <CreditCard size={22} style={{ color: 'var(--primary)' }} />,
+      endpoint: 'Internal Simulation: POST /api/orders',
+      description: 'Simulates a secure payment gateway processor during checkout. It validates card format parameters locally (expiry MM/YY, CVV lengths) and registers a successful dummy checkout charge, optionally saving card preferences on the server.',
+      badges: ['Simulation', 'Demo Gateway', 'Local Validation']
+    },
+    {
+      title: 'Email Notification Service (Demo / Simulation)',
+      icon: <Mail size={22} style={{ color: 'var(--secondary)' }} />,
+      endpoint: 'Internal Simulation: Console / Admin Logs',
+      description: 'Simulates transactional email notifications (e.g. order receipt confirmations, seller notifications). Instead of requiring mail credentials, it outputs simulated mails to the console and logs them to the Admin System Logs, keeping the code zero-config.',
+      badges: ['Simulation', 'Console Logging', 'Zero-Config SMTP']
     }
   ];
 
@@ -101,9 +115,21 @@ export const ApiInfo = () => {
               {api.icon}
               <h2 className="api-info-title">{api.title}</h2>
             </div>
-            <div className="api-info-endpoint" title={api.endpoint}>
-              {api.endpoint}
-            </div>
+            {api.endpoint.startsWith('http') ? (
+              <a 
+                href={api.endpoint} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="api-info-endpoint-link" 
+                title={api.endpoint}
+              >
+                {api.endpoint}
+              </a>
+            ) : (
+              <div className="api-info-endpoint" title={api.endpoint}>
+                {api.endpoint}
+              </div>
+            )}
             <p className="api-info-description">{api.description}</p>
             <div className="api-info-badges">
               {api.badges.map((badge, bIdx) => (

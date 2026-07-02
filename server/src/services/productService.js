@@ -36,7 +36,7 @@ const createProduct = async ({ title, description, price, imageUrl, stockQuantit
 };
 
 const getAllProducts = async (filters = {}) => {
-  const { categoryId, search, minPrice, maxPrice } = filters;
+  const { categoryId, search, minPrice, maxPrice, limit, offset } = filters;
   const whereClause = {};
 
   // 1. Filter by category
@@ -63,8 +63,7 @@ const getAllProducts = async (filters = {}) => {
     }
   }
 
-  // Return all matching products, including seller and category info (excluding barcode/timestamps to minimize payload)
-  return await Product.findAll({
+  const queryOptions = {
     where: whereClause,
     attributes: [
       'id', 'sellerId', 'categoryId', 'title', 'description', 
@@ -77,7 +76,16 @@ const getAllProducts = async (filters = {}) => {
       { model: Review, as: 'reviews', attributes: ['rating'] }
     ],
     order: [['createdAt', 'DESC']]
-  });
+  };
+
+  if (limit !== undefined) {
+    queryOptions.limit = parseInt(limit, 10);
+  }
+  if (offset !== undefined) {
+    queryOptions.offset = parseInt(offset, 10);
+  }
+
+  return await Product.findAll(queryOptions);
 };
 
 const getProductById = async (productId) => {
