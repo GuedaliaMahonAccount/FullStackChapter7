@@ -3,7 +3,7 @@ const OrderTracking = require('../models/nosql/OrderTracking');
 const { logEvent } = require('../utils/logger');
 const mongoose = require('mongoose');
 
-const placeOrder = async ({ buyerId, shippingAddress, items }, req = null) => {
+const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, req = null) => {
   const transaction = await sequelize.transaction();
 
   try {
@@ -37,6 +37,17 @@ const placeOrder = async ({ buyerId, shippingAddress, items }, req = null) => {
       });
     }
 
+    // Call processMockPayment to simulate credit card clearing with the payment provider
+    const { processMockPayment } = require('./externalApiService');
+    const paymentResult = await processMockPayment(totalPrice, paymentDetails || {
+      cardLast4: '4111', // Simulated fallback card details
+      cardExpiry: '12/28'
+    });
+
+    if (!paymentResult.success) {
+      throw { statusCode: 402, message: paymentResult.message || 'Payment Declined by mock provider.' };
+    }
+
     // 2. Create core order record in MySQL
     const order = await Order.create({
       buyerId,
@@ -57,6 +68,13 @@ const placeOrder = async ({ buyerId, shippingAddress, items }, req = null) => {
 
     // Commit MySQL transaction
     await transaction.commit();
+
+    // Call sendMockConfirmationEmail to simulate confirmation email notification
+    const { sendMockConfirmationEmail } = require('./externalApiService');
+    const buyer = await User.findByPk(buyerId);
+    if (buyer && buyer.email) {
+      await sendMockConfirmationEmail(buyer.email, order.id, totalPrice);
+    }
 
     // 4. Initialize Order Tracking state in MongoDB
     if (mongoose.connection.readyState === 1) {

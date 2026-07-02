@@ -23,6 +23,8 @@ export const Cart = () => {
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [errorMsg, setErrorMsg]               = useState('');
   const [purchaseSuccess, setPurchaseSuccess] = useState(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [verifyingCardLast4, setVerifyingCardLast4] = useState('');
 
   // Photon autocomplete states
   const [addressSuggestions, setAddressSuggestions]   = useState([]);
@@ -119,30 +121,40 @@ export const Cart = () => {
       return;
     }
 
-    // Save address / card preferences on the server securely
-    if (user) {
-      const billingPayload = {
-        savedAddress: saveAddress ? shippingAddress : null,
-        savedCardLast4: saveCard ? (usingSavedCard ? savedCard.last4 : rawCard.slice(-4)) : null,
-        savedCardExpiry: saveCard ? cardExpiry : null
-      };
-
-      patch('/auth/profile/billing', billingPayload)
-        .then(billingRes => {
-          if (billingRes && billingRes.success && updateUserBilling) {
-            updateUserBilling(billingRes.data);
-          }
-        })
-        .catch(err => {
-          console.warn('Failed to update billing details on server:', err);
-        });
-    }
-
     setIsSubmitting(true);
+    const cardLast4 = usingSavedCard ? savedCard.last4 : rawCard.slice(-4);
+    setVerifyingCardLast4(cardLast4);
+    setIsVerifyingPayment(true);
     try {
       const itemsPayload = cart.map((item) => ({ productId: item.id, quantity: item.quantity }));
-      const res = await post('/orders', { shippingAddress, items: itemsPayload });
+      const res = await post('/orders', { 
+        shippingAddress, 
+        items: itemsPayload,
+        paymentDetails: {
+          cardLast4,
+          cardExpiry
+        }
+      });
       if (res.success) {
+        // Save address / card preferences on the server securely only on successful purchase!
+        if (user) {
+          const billingPayload = {
+            savedAddress: saveAddress ? shippingAddress : null,
+            savedCardLast4: saveCard ? cardLast4 : null,
+            savedCardExpiry: saveCard ? cardExpiry : null
+          };
+
+          patch('/auth/profile/billing', billingPayload)
+            .then(billingRes => {
+              if (billingRes && billingRes.success && updateUserBilling) {
+                updateUserBilling(billingRes.data);
+              }
+            })
+            .catch(err => {
+              console.warn('Failed to update billing details on server:', err);
+            });
+        }
+
         clearCart();
         setPurchaseSuccess(res.data);
       }
@@ -150,6 +162,7 @@ export const Cart = () => {
       setErrorMsg(err.message || 'Checkout failed. Please check your details.');
     } finally {
       setIsSubmitting(false);
+      setIsVerifyingPayment(false);
     }
   };
 
@@ -167,6 +180,9 @@ export const Cart = () => {
           <h1 className="cart-page-style-054">Purchase Successful!</h1>
           <p className="cart-page-style-053">
             Your payment was processed. Order <strong className="cart-page-style-052">#{purchaseSuccess.orderId}</strong> is now registered.
+          </p>
+          <p style={{ fontSize: '0.88rem', color: 'var(--secondary-light)', marginTop: '8px', marginBottom: '16px' }}>
+            📧 A confirmation email has been sent to your registered email address.
           </p>
           <div className="cart-page-style-051">
             <button onClick={() => navigate('/orders')} className="btn btn-primary btn-lg cart-page-style-050" >
@@ -499,6 +515,20 @@ export const Cart = () => {
           </button>
         </form>
       </div>
+      {isVerifyingPayment && (
+        <div className="modal-overlay">
+          <div className="modal-panel text-center" style={{ maxWidth: '400px', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <div className="spinner spinner-lg" style={{ width: '48px', height: '48px', borderWidth: '4px', borderTopColor: 'var(--primary)', display: 'inline-block' }} />
+            <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Verifying Transaction</h2>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Connecting to secure mock payment gateway...
+            </p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+              Processing card ending in: **** **** **** {verifyingCardLast4}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

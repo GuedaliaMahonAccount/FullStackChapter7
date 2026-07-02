@@ -2218,29 +2218,6 @@ textarea.form-input {
   white-space: nowrap;
 }
 
-.api-info-endpoint-link {
-  font-family: monospace;
-  font-size: 0.78rem;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--primary-light);
-  overflow-x: auto;
-  white-space: nowrap;
-  text-decoration: none;
-  display: block;
-  transition: all var(--transition-fast);
-  cursor: pointer;
-}
-
-.api-info-endpoint-link:hover {
-  background: rgba(99, 102, 241, 0.08);
-  border-color: rgba(99, 102, 241, 0.25);
-  color: var(--primary-light);
-  text-decoration: underline;
-}
-
 .api-info-description {
   font-size: 0.86rem;
   color: var(--text-secondary);
@@ -2262,15 +2239,29 @@ textarea.form-input {
 }
 
 .footer-link-api {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  border-radius: var(--radius-xs);
+  background: rgba(20, 184, 166, 0.08);
+  color: var(--secondary-light);
+  font-size: 0.92rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: all var(--transition-fast);
 }
 
+
 .footer-link-api:hover {
-  color: var(--secondary);
+  color: #fff;
+  border-color: rgba(20, 184, 166, 0.55);
+  background: rgba(20, 184, 166, 0.16);
+  transform: translateY(-1px);
 }
 
 /* ========================================
@@ -2684,6 +2675,7 @@ textarea.form-input {
   color: var(--primary-light);
   font-weight: 700;
 }
+
 /* ========================================
    HOME PAGE STYLING
 ======================================== */
@@ -3295,7 +3287,7 @@ textarea.form-input {
 }
 
 .product-detail-style-066 {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px;
@@ -3365,8 +3357,8 @@ textarea.form-input {
   gap: 10px;
   padding: 14px 20px;
   border-radius: var(--radius-sm);
-  background: rgba(99,102,241,0.08);
-  border: 1px solid rgba(99,102,241,0.25);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
   color: var(--primary-light);
   font-size: 0.9rem;
   font-weight: 600;
@@ -3387,7 +3379,7 @@ textarea.form-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -3515,7 +3507,7 @@ textarea.form-input {
 .product-detail-style-030 {
   font-size: 0.83rem;
   color: var(--text-secondary);
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -3524,7 +3516,7 @@ textarea.form-input {
 
 .product-detail-style-029 {
   font-size: 0.82rem;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -3729,14 +3721,14 @@ textarea.form-input {
   padding: 48px 40px;
   border-radius: var(--radius-lg);
   text-align: center;
-  border: 1px solid rgba(20,184,166,0.25);
-  box-shadow: 0 0 60px rgba(20,184,166,0.08);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  box-shadow: 0 0 60px rgba(20, 184, 166, 0.08);
   animation: slideUp 0.4s ease;
 }
 
 .cart-page-style-055 {
   display: inline-flex;
-  background: rgba(20,184,166,0.12);
+  background: rgba(20, 184, 166, 0.12);
   color: var(--secondary);
   padding: 18px;
   border-radius: 50%;
@@ -3984,8 +3976,8 @@ textarea.form-input {
   gap: 10px;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: rgba(20,184,166,0.08);
-  border: 1px solid rgba(20,184,166,0.2);
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.2);
   margin-bottom: 12px;
   font-size: 0.82rem;
   color: var(--text-secondary);
@@ -4235,8 +4227,8 @@ textarea.form-input {
   padding: 6px;
   border-radius: 4px;
   cursor: pointer;
-  background: rgba(255,255,255,0.01);
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   transition: background var(--transition-fast);
   text-align: left;
 }
@@ -4342,7 +4334,7 @@ textarea.form-input {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px;
@@ -4517,7 +4509,7 @@ textarea.form-input {
   background: var(--bg-panel, #1e1e2e);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   list-style: none;
   padding: 4px 0;
   margin: 4px 0 0 0;
@@ -4532,7 +4524,7 @@ textarea.form-input {
 .new-product-modal-style-006 {
   height: 32px;
   font-size: 0.8rem;
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border-color: var(--primary-border, var(--border));
 }
 
@@ -4689,7 +4681,7 @@ textarea.form-input {
   left: 8%;
   right: 8%;
   height: 3;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 2;
 }
 
@@ -4727,7 +4719,7 @@ textarea.form-input {
   display: flex;
   gap: 12px;
   align-items: center;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 10px 12px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
@@ -4761,7 +4753,7 @@ textarea.form-input {
 }
 
 .orders-manager-style-033 {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 12px 14px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
@@ -4791,7 +4783,7 @@ textarea.form-input {
 }
 
 .orders-manager-style-029 {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 12px 14px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
@@ -5105,7 +5097,7 @@ textarea.form-input {
   left: 8%;
   right: 8%;
   height: 3;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 2;
 }
 
@@ -5136,7 +5128,7 @@ textarea.form-input {
   display: flex;
   gap: 12px;
   align-items: center;
-  background: rgba(255,255,255,0.025);
+  background: rgba(255, 255, 255, 0.025);
   padding: 10px 12px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
@@ -5170,7 +5162,7 @@ textarea.form-input {
 }
 
 .order-status-style-014 {
-  background: rgba(255,255,255,0.025);
+  background: rgba(255, 255, 255, 0.025);
   padding: 12px 14px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border);
@@ -5383,7 +5375,7 @@ textarea.form-input {
 .admin-dashboard-style-012 {
   width: 100%;
   background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-  box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
   border-radius: var(--radius-sm);
 }
 
@@ -5596,7 +5588,7 @@ textarea.form-input {
   background: var(--bg-panel, #1e1e2e);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   list-style: none;
   padding: 4px 0;
   margin: 4px 0 0 0;
@@ -5611,7 +5603,7 @@ textarea.form-input {
 .edit-product-modal-style-006 {
   height: 32px;
   font-size: 0.8rem;
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border-color: var(--primary-border, var(--border));
 }
 
@@ -5703,7 +5695,7 @@ textarea.form-input {
   position: absolute;
   top: 10;
   right: 10;
-  background: rgba(6,8,15,0.82);
+  background: rgba(6, 8, 15, 0.82);
   backdrop-filter: blur(8px);
   padding: 4px 10px;
   border-radius: var(--radius-full);
@@ -5849,7 +5841,7 @@ textarea.form-input {
   display: flex;
   gap: 14px;
   padding: 14px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: border-color 0.2s;
@@ -6119,7 +6111,7 @@ textarea.form-input {
 .protected-route-style-001 {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255,255,255,0.1);
+  border: 3px solid rgba(255, 255, 255, 0.1);
   border-top-color: #6366f1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -6267,8 +6259,8 @@ textarea.form-input {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.75rem;
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .edit-product-modal-gemini-style-041 {
@@ -6353,9 +6345,9 @@ textarea.form-input {
 
 .edit-product-modal-gemini-style-027 {
   padding: 8px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -6483,7 +6475,7 @@ textarea.form-input {
   background: var(--bg-panel, #1e1e2e);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   list-style: none;
   padding: 4px 0;
   margin: 4px 0 0 0;
@@ -6498,7 +6490,7 @@ textarea.form-input {
 .edit-product-modal-gemini-style-006 {
   height: 32px;
   font-size: 0.8rem;
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border-color: var(--primary-border, var(--border));
 }
 

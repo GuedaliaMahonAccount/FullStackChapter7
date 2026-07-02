@@ -115,21 +115,9 @@ export const ApiInfo = () => {
               {api.icon}
               <h2 className="api-info-title">{api.title}</h2>
             </div>
-            {api.endpoint.startsWith('http') ? (
-              <a 
-                href={api.endpoint} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="api-info-endpoint-link" 
-                title={api.endpoint}
-              >
-                {api.endpoint}
-              </a>
-            ) : (
-              <div className="api-info-endpoint" title={api.endpoint}>
-                {api.endpoint}
-              </div>
-            )}
+            <div className="api-info-endpoint" title={api.endpoint}>
+              {api.endpoint}
+            </div>
             <p className="api-info-description">{api.description}</p>
             <div className="api-info-badges">
               {api.badges.map((badge, bIdx) => (

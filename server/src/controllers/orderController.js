@@ -2,7 +2,7 @@ const orderService = require('../services/orderService');
 
 const placeOrder = async (req, res, next) => {
   try {
-    const { shippingAddress, items } = req.body;
+    const { shippingAddress, items, paymentDetails } = req.body;
     const buyerId = req.user.id;
 
     if (!shippingAddress) {
@@ -22,7 +22,8 @@ const placeOrder = async (req, res, next) => {
     const orderResult = await orderService.placeOrder({
       buyerId,
       shippingAddress,
-      items
+      items,
+      paymentDetails
     }, req);
 
     res.status(201).json({
