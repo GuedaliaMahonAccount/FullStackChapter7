@@ -1,5 +1,6 @@
 const { Review, User, Product } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
+const { createNotification } = require('./notificationService');
 
 const createReview = async ({ rating, comment, productId, buyerId }, req = null) => {
   // Prevent user from reviewing their own product
@@ -10,6 +11,9 @@ const createReview = async ({ rating, comment, productId, buyerId }, req = null)
   if (product.sellerId === buyerId) {
     throw { statusCode: 400, message: 'You cannot rate or review your own product.' };
   }
+
+  const buyer = await User.findByPk(buyerId);
+  const buyerName = buyer ? buyer.fullName : 'קונה';
 
   // Check if buyer already reviewed this product
   const existing = await Review.findOne({
@@ -26,6 +30,17 @@ const createReview = async ({ rating, comment, productId, buyerId }, req = null)
       details: { reviewId: existing.id, productId, rating },
       req
     });
+
+    try {
+      await createNotification({
+        userId: product.sellerId,
+        title: 'Review Updated on Your Product',
+        message: `${buyerName} updated their review to ${rating} stars for "${product.title}".`,
+        type: 'new_review'
+      });
+    } catch (err) {
+      console.error('Error creating review update notification:', err.message);
+    }
 
     return Review.findByPk(existing.id, {
       include: [{ model: User, as: 'buyer', attributes: ['fullName'] }]
@@ -47,6 +62,17 @@ const createReview = async ({ rating, comment, productId, buyerId }, req = null)
     details: { reviewId: review.id, productId, rating },
     req
   });
+
+  try {
+    await createNotification({
+      userId: product.sellerId,
+      title: 'New Review on Your Product',
+      message: `${buyerName} left a ${rating}-star review for "${product.title}".`,
+      type: 'new_review'
+    });
+  } catch (err) {
+    console.error('Error creating review creation notification:', err.message);
+  }
 
   return Review.findByPk(review.id, {
     include: [{ model: User, as: 'buyer', attributes: ['fullName'] }]

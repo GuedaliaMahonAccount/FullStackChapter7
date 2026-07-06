@@ -16,7 +16,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['order_status', 'new_listing', 'payment_alert', 'general'],
+    enum: ['order_status', 'new_listing', 'payment_alert', 'new_review', 'general'],
     default: 'general'
   },
   is_read: {

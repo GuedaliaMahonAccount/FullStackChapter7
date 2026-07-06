@@ -485,7 +485,7 @@ const seedDatabase = async () => {
 const initializeDatabase = async () => {
   try {
     // Sync all models (create tables if they do not exist, update if they do)
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     console.log('MySQL schemas synchronized successfully.');
 
     // Always ensure default categories exist
@@ -506,7 +506,7 @@ const initializeDatabase = async () => {
       });
     }
     console.log('Ensured default categories exist.');
-    
+
     // Seed records only if SEED_ON_START is explicitly set to 'true'
     if (process.env.SEED_ON_START === 'true') {
       await seedDatabase();

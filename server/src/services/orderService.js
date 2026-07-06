@@ -1,6 +1,7 @@
 const { sequelize, Order, OrderItem, Product, User } = require('../models/sql');
 const OrderTracking = require('../models/nosql/OrderTracking');
 const { logEvent } = require('../utils/logger');
+const { createNotification } = require('./notificationService');
 const mongoose = require('mongoose');
 
 const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, req = null) => {
@@ -48,60 +49,109 @@ const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, r
       throw { statusCode: 402, message: paymentResult.message || 'Payment Declined by mock provider.' };
     }
 
-    // 2. Create core order record in MySQL
-    const order = await Order.create({
-      buyerId,
-      totalPrice,
-      shippingAddress,
-      paymentStatus: 'paid' // Auto-set paid for demo purposes
-    }, { transaction });
-
-    // 3. Create order items in MySQL
+    // Group items by sellerId
+    const itemsBySeller = {};
     for (const item of itemsToCreate) {
-      await OrderItem.create({
-        orderId: order.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        priceAtPurchase: item.priceAtPurchase
+      if (!itemsBySeller[item.sellerId]) {
+        itemsBySeller[item.sellerId] = [];
+      }
+      itemsBySeller[item.sellerId].push(item);
+    }
+
+    const createdOrders = [];
+
+    // Create separate Order & OrderItems for each seller group
+    for (const sellerId of Object.keys(itemsBySeller)) {
+      const sellerItems = itemsBySeller[sellerId];
+      const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.priceAtPurchase * item.quantity), 0);
+
+      // Create core order record in MySQL
+      const order = await Order.create({
+        buyerId,
+        totalPrice: sellerTotal,
+        shippingAddress,
+        paymentStatus: 'paid'
       }, { transaction });
+
+      // Create order items in MySQL
+      for (const item of sellerItems) {
+        await OrderItem.create({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          priceAtPurchase: item.priceAtPurchase
+        }, { transaction });
+      }
+
+      createdOrders.push({
+        order,
+        items: sellerItems,
+        sellerId,
+        totalPrice: sellerTotal
+      });
     }
 
     // Commit MySQL transaction
     await transaction.commit();
 
-    // Call sendMockConfirmationEmail to simulate confirmation email notification
-    const { sendMockConfirmationEmail } = require('./externalApiService');
     const buyer = await User.findByPk(buyerId);
-    if (buyer && buyer.email) {
-      await sendMockConfirmationEmail(buyer.email, order.id, totalPrice);
-    }
+    const { sendMockConfirmationEmail } = require('./externalApiService');
 
-    // 4. Initialize Order Tracking state in MongoDB
-    if (mongoose.connection.readyState === 1) {
+    // Run post-commit activities for each created order
+    for (const orderData of createdOrders) {
+      const { order, items: sellerItems, sellerId, totalPrice: sellerTotal } = orderData;
+
+      // Send email
+      if (buyer && buyer.email) {
+        try {
+          await sendMockConfirmationEmail(buyer.email, order.id, sellerTotal);
+        } catch (err) {
+          console.error(`Error sending confirmation email for order ${order.id}:`, err.message);
+        }
+      }
+
+      // Initialize Order Tracking state in MongoDB
+      if (mongoose.connection.readyState === 1) {
+        try {
+          await OrderTracking.create({
+            order_id: order.id,
+            current_status: 'Pending',
+            status_history: [{
+              status: 'Pending',
+              notes: 'Order placed and payment confirmed.'
+            }]
+          });
+        } catch (err) {
+          console.error(`Error initializing MongoDB order tracking for order ${order.id}:`, err.message);
+        }
+      }
+
+      // Notify Seller of new purchase
       try {
-        await OrderTracking.create({
-          order_id: order.id,
-          current_status: 'Pending',
-          status_history: [{
-            status: 'Pending',
-            notes: 'Order placed and payment confirmed.'
-          }]
+        await createNotification({
+          userId: sellerId,
+          title: 'New Order Received!',
+          message: `You have received a new order #${order.id} containing ${sellerItems.length} item(s).`,
+          type: 'order_status'
         });
       } catch (err) {
-        console.error('Error initializing MongoDB order tracking:', err.message);
+        console.error('Error creating seller order notification:', err.message);
       }
+
+      // Log order placement event
+      await logEvent({
+        eventType: 'ORDER_PLACED',
+        userId: buyerId,
+        details: { orderId: order.id, totalPrice: sellerTotal, itemCount: sellerItems.length },
+        req
+      });
     }
 
-    // 6. Log order placement event
-    await logEvent({
-      eventType: 'ORDER_PLACED',
-      userId: buyerId,
-      details: { orderId: order.id, totalPrice, itemCount: items.length },
-      req
-    });
+    // Return joined order IDs for frontend compatibility
+    const joinedOrderIds = createdOrders.map(o => o.order.id).join(', ');
 
     return {
-      orderId: order.id,
+      orderId: joinedOrderIds,
       totalPrice,
       paymentStatus: 'paid'
     };
@@ -270,6 +320,18 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
     details: { orderId, newStatus: status, notes },
     req
   });
+
+  // Notify buyer of status update
+  try {
+    await createNotification({
+      userId: order.buyerId,
+      title: 'Order Status Updated',
+      message: `Your order #${orderId} status has been updated to: ${status}`,
+      type: 'order_status'
+    });
+  } catch (err) {
+    console.error('Error creating buyer order status update notification:', err.message);
+  }
 
   return updatePayload;
 };

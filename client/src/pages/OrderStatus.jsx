@@ -140,7 +140,9 @@ export const OrderStatus = () => {
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = 'var(--border)'; }}
               >
                 <div className="order-status-style-035">
-                  <span className="order-status-style-034">Order #{o.id}</span>
+                  <span className="order-status-style-034" title={`Order #${o.id}`}>
+                    Order #{o.id.length > 10 ? `${o.id.substring(0, 8)}...` : o.id}
+                  </span>
                   <span className="order-status-style-033">
                     {formatPrice(o.totalPrice, o.currency || 'USD')}
                   </span>
