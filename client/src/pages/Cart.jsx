@@ -5,26 +5,42 @@ import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
 import { Trash2, ShoppingBag, CreditCard, MapPin, CheckCircle, Plus, Minus, ArrowRight, Search } from 'lucide-react';
 import { getImageUrl, formatPrice } from '../utils/format';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import StripeCardForm from '../components/common/StripeCardForm';
 
 export const Cart = () => {
   const { cart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useCart();
   const { user, updateUserBilling } = useAuth();
-  const { post, patch } = useFetch();
+  const { post, patch, get } = useFetch();
   const navigate = useNavigate();
 
   // ---------- Form state ----------
-  const [savedCard, setSavedCard]             = useState(null);
   const [shippingAddress, setShippingAddress] = useState('');
-  const [cardNumber, setCardNumber]           = useState('');
-  const [cardExpiry, setCardExpiry]           = useState('');
-  const [cardCvv, setCardCvv]                 = useState('');
-  const [saveCard, setSaveCard]               = useState(false);
   const [saveAddress, setSaveAddress]         = useState(false);
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [errorMsg, setErrorMsg]               = useState('');
   const [purchaseSuccess, setPurchaseSuccess] = useState(null);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
-  const [verifyingCardLast4, setVerifyingCardLast4] = useState('');
+  const [stripePromise, setStripePromise]     = useState(null);
+
+  // Load Stripe publishable key dynamically from the server
+  useEffect(() => {
+    const fetchPublishableKey = async () => {
+      try {
+        const res = await get('/payment/config');
+        if (res.success && res.data.publishableKey) {
+          setStripePromise(loadStripe(res.data.publishableKey));
+        }
+      } catch (err) {
+        console.error('Failed to load Stripe config:', err);
+      }
+    };
+
+    if (user) {
+      fetchPublishableKey();
+    }
+  }, [user]);
 
   // Photon autocomplete states
   const [addressSuggestions, setAddressSuggestions]   = useState([]);
@@ -33,19 +49,12 @@ export const Cart = () => {
   // Sync form states with saved user details when user changes
   useEffect(() => {
     if (!user) {
-      setSavedCard(null);
       setShippingAddress('');
-      setCardExpiry('');
-      setSaveCard(false);
       setSaveAddress(false);
       return;
     }
 
-    const card = user.savedCardLast4 ? { last4: user.savedCardLast4, expiry: user.savedCardExpiry } : null;
-    setSavedCard(card);
     setShippingAddress(user.savedAddress || '');
-    setCardExpiry(user.savedCardExpiry || '');
-    setSaveCard(!!user.savedCardLast4);
     setSaveAddress(!!user.savedAddress);
   }, [user]);
 
@@ -86,62 +95,67 @@ export const Cart = () => {
 
   const getCartTotalFormatted = () => {
     if (cart.length === 0) return '$0.00';
-    const firstCurrency = cart[0].currency || 'USD';
-    const allSame = cart.every(item => (item.currency || 'USD') === firstCurrency);
-    const total = getCartTotal();
-    if (allSame) {
-      return formatPrice(total, firstCurrency);
-    } else {
-      return formatPrice(total, 'USD') + ' (USD)';
-    }
+    // Convert everything to USD at fixed rates for Stripe checkout
+    const rates = { USD: 1.0, ILS: 0.27, EUR: 1.08 };
+    const totalUSD = cart.reduce((sum, item) => {
+      const rate = rates[item.currency || 'USD'] || 1.0;
+      return sum + (parseFloat(item.price) * rate * item.quantity);
+    }, 0);
+    return formatPrice(totalUSD, 'USD');
   };
 
-  const handleSubmitCheckout = async (e) => {
-    e.preventDefault();
+  const handleStripePayment = async (stripe, cardElement) => {
     setErrorMsg('');
     if (cart.length === 0) { setErrorMsg('Your cart is empty.'); return; }
-
-    // Basic card validation
-    const rawCard = cardNumber.replace(/\s/g, '');
-    const usingSavedCard = savedCard && !rawCard;
-
-    if (!usingSavedCard) {
-      if (rawCard.length < 13 || rawCard.length > 19) {
-        setErrorMsg('Please enter a valid card number.');
-        return;
-      }
-    }
-
-    if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
-      setErrorMsg('Please enter expiry in MM/YY format.');
-      return;
-    }
-    if (cardCvv.length < 3) {
-      setErrorMsg('Please enter a valid CVV (3–4 digits).');
-      return;
-    }
+    if (!shippingAddress) { setErrorMsg('Please specify a shipping address.'); return; }
 
     setIsSubmitting(true);
-    const cardLast4 = usingSavedCard ? savedCard.last4 : rawCard.slice(-4);
-    setVerifyingCardLast4(cardLast4);
     setIsVerifyingPayment(true);
+
     try {
       const itemsPayload = cart.map((item) => ({ productId: item.id, quantity: item.quantity }));
-      const res = await post('/orders', { 
-        shippingAddress, 
-        items: itemsPayload,
-        paymentDetails: {
-          cardLast4,
-          cardExpiry
+      
+      // Step 1: Create Payment Intent on the server
+      const intentRes = await post('/payment/create-payment-intent', { items: itemsPayload });
+      if (!intentRes.success) {
+        throw new Error(intentRes.message || 'Failed to initialize payment.');
+      }
+
+      const { clientSecret } = intentRes.data;
+
+      // Step 2: Confirm card payment with Stripe SDK
+      const paymentResult = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: user?.fullName || 'Guest User',
+            email: user?.email || 'guest@example.com'
+          }
         }
       });
-      if (res.success) {
-        // Save address / card preferences on the server securely only on successful purchase!
-        if (user) {
+
+      if (paymentResult.error) {
+        throw new Error(paymentResult.error.message || 'Stripe payment failed.');
+      }
+
+      if (paymentResult.paymentIntent.status !== 'succeeded') {
+        throw new Error('Payment was not completed successfully.');
+      }
+
+      // Step 3: Call orders API to register the completed transaction
+      const orderRes = await post('/orders', { 
+        shippingAddress, 
+        items: itemsPayload,
+        paymentIntentId: paymentResult.paymentIntent.id
+      });
+
+      if (orderRes.success) {
+        // Save shipping address preference only on successful purchase!
+        if (user && saveAddress) {
           const billingPayload = {
-            savedAddress: saveAddress ? shippingAddress : null,
-            savedCardLast4: saveCard ? cardLast4 : null,
-            savedCardExpiry: saveCard ? cardExpiry : null
+            savedAddress: shippingAddress,
+            savedCardLast4: null,
+            savedCardExpiry: null
           };
 
           patch('/auth/profile/billing', billingPayload)
@@ -156,7 +170,7 @@ export const Cart = () => {
         }
 
         clearCart();
-        setPurchaseSuccess(res.data);
+        setPurchaseSuccess(orderRes.data);
       }
     } catch (err) {
       setErrorMsg(err.message || 'Checkout failed. Please check your details.');
@@ -181,7 +195,7 @@ export const Cart = () => {
           <p className="cart-page-style-053">
             Your payment was processed. Order <strong className="cart-page-style-052">#{purchaseSuccess.orderId}</strong> is now registered.
           </p>
-          <p style={{ fontSize: '0.88rem', color: 'var(--secondary-light)', marginTop: '8px', marginBottom: '16px' }}>
+          <p className="cart-gemini-style-013">
             📧 A confirmation email has been sent to your registered email address.
           </p>
           <div className="cart-page-style-051">
@@ -260,6 +274,11 @@ export const Cart = () => {
                   </h3>
                   <span className="cart-page-style-034">
                     {formatPrice(item.price, item.currency)}
+                    {item.currency !== 'USD' && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                        (≈ {formatPrice(parseFloat(item.price) * ({ ILS: 0.27, EUR: 1.08 }[item.currency] || 1.0), 'USD')})
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -291,7 +310,7 @@ export const Cart = () => {
         </div>
 
         {/* Right: Checkout Form */}
-        <form onSubmit={handleSubmitCheckout} className="glass-panel-static cart-page-style-031" >
+        <div className="glass-panel-static cart-page-style-031">
           <h2 className="cart-page-style-030">Checkout Summary</h2>
 
           {/* Shipping */}
@@ -384,147 +403,44 @@ export const Cart = () => {
 
           {/* Payment */}
           <div>
-            <p className="cart-page-style-018">
-              <CreditCard size={13} /> Payment (Demo)
+            <p className="cart-page-style-018 cart-gemini-style-012" >
+              <CreditCard size={13} /> Secure Payment via Stripe
             </p>
 
-            {/* Saved card banner */}
-            {savedCard && (
-              <div className="cart-page-style-017">
-                <CreditCard size={15} className="cart-page-style-016" />
-                <span>
-                  Saved card: <strong className="cart-page-style-015">•••• •••• •••• {savedCard.last4}</strong> — expires <strong className="cart-page-style-014">{savedCard.expiry}</strong>
-                </span>
-              </div>
-            )}
 
-            <div className="cart-page-style-013">
-              <div className="form-group cart-page-style-012" >
-                <label className="form-label" htmlFor="checkout-card">Card Number</label>
-                <input
-                  id="checkout-card"
-                  type="text"
-                  className="form-input"
-                  placeholder={savedCard ? `•••• •••• •••• ${savedCard.last4}` : '4111 2222 3333 4444'}
-                  value={cardNumber}
-                  onChange={(e) => {
-                    // Auto-format with spaces every 4 digits
-                    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
-                    const formatted = raw.match(/.{1,4}/g)?.join(' ') || raw;
-                    setCardNumber(formatted);
-                  }}
-                  maxLength={19}
-                  inputMode="numeric"
-                  autoComplete="cc-number"
-                  required={!savedCard}
-                />
-              </div>
-              <div className="cart-page-style-011">
-                <div className="form-group cart-page-style-010" >
-                  <label className="form-label" htmlFor="checkout-expiry">Expiry</label>
-                  <input
-                    id="checkout-expiry"
-                    type="text"
-                    className="form-input"
-                    placeholder="MM/YY"
-                    value={cardExpiry}
-                    onChange={(e) => {
-                      let val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                      if (val.length >= 3) val = val.slice(0, 2) + '/' + val.slice(2);
-                      setCardExpiry(val);
-                    }}
-                    maxLength={5}
-                    inputMode="numeric"
-                    autoComplete="cc-exp"
-                    required
-                  />
-                </div>
-                <div className="form-group cart-page-style-009" >
-                  <label className="form-label" htmlFor="checkout-cvv">CVV</label>
-                  <input
-                    id="checkout-cvv"
-                    type="password"
-                    className="form-input"
-                    placeholder="•••"
-                    value={cardCvv}
-                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    maxLength={4}
-                    inputMode="numeric"
-                    autoComplete="cc-csc"
-                    required
-                  />
-                </div>
-              </div>
 
-              {/* Save card checkbox */}
-              <label
-                htmlFor="checkout-save-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  cursor: 'pointer',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: saveCard ? 'rgba(99,102,241,0.07)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${saveCard ? 'rgba(99,102,241,0.3)' : 'var(--border-soft)'}`,
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <input
-                  id="checkout-save-card"
-                  type="checkbox"
-                  checked={saveCard}
-                  onChange={(e) => setSaveCard(e.target.checked)}
-                  className="cart-page-style-008"
-                />
-                <div>
-                  <span className="cart-page-style-007">
-                    Remember card for next time
-                  </span>
-                  <span className="cart-page-style-006">
-                    🔒 Only the last 4 digits &amp; expiry are stored locally. Your full card number and CVV are <strong>never saved</strong>.
-                  </span>
-                </div>
-              </label>
+            <div className="divider cart-page-style-005"  />
+
+            {/* Total + CTA */}
+            <div className="cart-page-style-004 cart-gemini-style-007" >
+              <span className="cart-page-style-003">Grand Total</span>
+              <span className="cart-page-style-002">
+                {getCartTotalFormatted()}
+              </span>
             </div>
-          </div>
 
-          <div className="divider cart-page-style-005"  />
-
-          {/* Total + CTA */}
-          <div className="cart-page-style-004">
-            <span className="cart-page-style-003">Grand Total</span>
-            <span className="cart-page-style-002">
-              {getCartTotalFormatted()}
-            </span>
-          </div>
-
-          <button
-            id="checkout-submit-btn"
-            type="submit"
-            className="btn btn-primary btn-lg cart-page-style-001"
-            
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <><span className="spinner spinner-sm" /> Processing…</>
+            {stripePromise ? (
+              <Elements stripe={stripePromise}>
+                <StripeCardForm
+                  onSubmitPayment={handleStripePayment}
+                  isSubmitting={isSubmitting}
+                />
+              </Elements>
             ) : (
-              <>Pay & Place Order <ArrowRight size={16} /></>
+              <div className="cart-gemini-style-006">
+                <span className="spinner spinner-sm cart-gemini-style-005"  /> Loading payment gateway...
+              </div>
             )}
-          </button>
-        </form>
+          </div>
+        </div>
       </div>
       {isVerifyingPayment && (
         <div className="modal-overlay">
-          <div className="modal-panel text-center" style={{ maxWidth: '400px', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            <div className="spinner spinner-lg" style={{ width: '48px', height: '48px', borderWidth: '4px', borderTopColor: 'var(--primary)', display: 'inline-block' }} />
-            <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Verifying Transaction</h2>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Connecting to secure mock payment gateway...
-            </p>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-              Processing card ending in: **** **** **** {verifyingCardLast4}
+          <div className="modal-panel text-center cart-gemini-style-004" >
+            <div className="spinner spinner-lg cart-gemini-style-003"  />
+            <h2 className="text-gradient cart-gemini-style-002" >Verifying Transaction</h2>
+            <p className="cart-gemini-style-001">
+              Connecting to secure Stripe Test payment gateway...
             </p>
           </div>
         </div>

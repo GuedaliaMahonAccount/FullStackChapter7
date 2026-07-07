@@ -19,7 +19,7 @@ export const Footer = () => {
             &copy; {year} GeoMarket C2C — Academic Final Project
           </p>
           <Link to="/api-info" className="footer-link-api">
-            ℹ️ System Architecture & APIs
+            ℹ️ System APIs & Stripe Test Cards
           </Link>
         </div>
 

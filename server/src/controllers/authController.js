@@ -42,11 +42,9 @@ const getProfile = async (req, res, next) => {
 
 const updateProfileBilling = async (req, res, next) => {
   try {
-    const { savedAddress, savedCardLast4, savedCardExpiry } = req.body;
+    const { savedAddress } = req.body;
     const updated = await authService.updateUserProfileBilling(req.user.id, {
-      savedAddress,
-      savedCardLast4,
-      savedCardExpiry
+      savedAddress
     });
     res.status(200).json({
       success: true,

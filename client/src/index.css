@@ -6716,3 +6716,306 @@ textarea.form-input {
     padding: 12px 16px;
   }
 }
+
+/* ========================================
+   API INFO GEMINI EXTRACTED STYLES
+======================================== */
+.api-info-gemini-style-032 {
+  color: var(--primary);
+}
+
+.api-info-gemini-style-031 {
+  color: var(--secondary);
+}
+
+.api-info-gemini-style-030 {
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: var(--radius-md);
+}
+
+.api-info-gemini-style-029 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-info-gemini-style-028 {
+  color: var(--primary);
+}
+
+.api-info-gemini-style-027 {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.api-info-gemini-style-026 {
+  overflow-x: auto;
+}
+
+.api-info-gemini-style-025 {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.api-info-gemini-style-024 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-023 {
+  padding: 8px 12px;
+  color: var(--text-muted);
+}
+
+.api-info-gemini-style-022 {
+  padding: 8px 12px;
+  color: var(--text-muted);
+}
+
+.api-info-gemini-style-021 {
+  padding: 8px 12px;
+  color: var(--text-muted);
+}
+
+.api-info-gemini-style-020 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-019 {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.api-info-gemini-style-018 {
+  padding: 10px 12px;
+  font-family: monospace;
+}
+
+.api-info-gemini-style-017 {
+  padding: 10px 12px;
+  color: var(--secondary);
+}
+
+.api-info-gemini-style-016 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-015 {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.api-info-gemini-style-014 {
+  padding: 10px 12px;
+  font-family: monospace;
+}
+
+.api-info-gemini-style-013 {
+  padding: 10px 12px;
+  color: #ef4444;
+}
+
+.api-info-gemini-style-012 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-011 {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.api-info-gemini-style-010 {
+  padding: 10px 12px;
+  font-family: monospace;
+}
+
+.api-info-gemini-style-009 {
+  padding: 10px 12px;
+  color: #ef4444;
+}
+
+.api-info-gemini-style-008 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-007 {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.api-info-gemini-style-006 {
+  padding: 10px 12px;
+  font-family: monospace;
+}
+
+.api-info-gemini-style-005 {
+  padding: 10px 12px;
+  color: #ef4444;
+}
+
+.api-info-gemini-style-004 {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.api-info-gemini-style-003 {
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.api-info-gemini-style-002 {
+  padding: 10px 12px;
+  font-family: monospace;
+}
+
+.api-info-gemini-style-001 {
+  padding: 10px 12px;
+  color: #ef4444;
+}
+
+/* ========================================
+   CART GEMINI EXTRACTED STYLES
+======================================== */
+.cart-gemini-style-013 {
+  font-size: 0.88rem;
+  color: var(--secondary-light);
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.cart-gemini-style-012 {
+  margin-bottom: 12px;
+}
+
+.cart-gemini-style-011 {
+  margin-bottom: 16px;
+}
+
+.cart-gemini-style-010 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cart-gemini-style-009 {
+  font-size: 0.85rem;
+}
+
+.cart-gemini-style-008 {
+  font-size: 0.72rem;
+  display: block;
+  margin-top: 2px;
+}
+
+.cart-gemini-style-007 {
+  margin-bottom: 16px;
+}
+
+.cart-gemini-style-006 {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.cart-gemini-style-005 {
+  margin-right: 8px;
+}
+
+.cart-gemini-style-004 {
+  max-width: 400px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.cart-gemini-style-003 {
+  width: 48px;
+  height: 48px;
+  border-width: 4px;
+  border-top-color: var(--primary);
+  display: inline-block;
+}
+
+.cart-gemini-style-002 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.cart-gemini-style-001 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   STRIPE CARD FORM EXTRACTED STYLES
+======================================== */
+.stripe-card-form-style-007 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stripe-card-form-style-006 {
+  margin-bottom: 8px;
+}
+
+.stripe-card-form-style-005 {
+  margin-bottom: 8px;
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stripe-card-form-style-004 {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.stripe-card-form-style-003 {
+  width: 100%;
+}
+
+.stripe-card-form-style-002 {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stripe-card-form-style-001 {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ========================================
+   HOME GEMINI EXTRACTED STYLES
+======================================== */
+.home-gemini-style-002 {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.home-gemini-style-001 {
+  min-width: 150px;
+}

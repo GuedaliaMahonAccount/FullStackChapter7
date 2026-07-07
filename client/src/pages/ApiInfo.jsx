@@ -77,15 +77,15 @@ export const ApiInfo = () => {
       badges: ['100 Req/Day Free', 'General Catalog', 'Fail-Safe Fallback']
     },
     {
-      title: 'Payment Gateway (Demo / Simulation)',
-      icon: <CreditCard size={22} style={{ color: 'var(--primary)' }} />,
-      endpoint: 'Internal Simulation: POST /api/orders',
-      description: 'Simulates a secure payment gateway processor during checkout. It validates card format parameters locally (expiry MM/YY, CVV lengths) and registers a successful dummy checkout charge, optionally saving card preferences on the server.',
-      badges: ['Simulation', 'Demo Gateway', 'Local Validation']
+      title: 'Payment Gateway (Stripe Test Mode)',
+      icon: <CreditCard size={22} className="api-info-gemini-style-032" />,
+      endpoint: 'Stripe API: POST /api/payment/create-payment-intent',
+      description: 'Integrates secure, tokenized credit card processing via Stripe Elements (iframe) and Stripe SDK. Calculates transaction totals on the backend from database prices to prevent tampering, confirms client charge status, and splits orders by seller.',
+      badges: ['Stripe Elements', 'Secure Tokenization', 'Order Splitting']
     },
     {
       title: 'Email Notification Service (Demo / Simulation)',
-      icon: <Mail size={22} style={{ color: 'var(--secondary)' }} />,
+      icon: <Mail size={22} className="api-info-gemini-style-031" />,
       endpoint: 'Internal Simulation: Console / Admin Logs',
       description: 'Simulates transactional email notifications (e.g. order receipt confirmations, seller notifications). Instead of requiring mail credentials, it outputs simulated mails to the console and logs them to the Admin System Logs, keeping the code zero-config.',
       badges: ['Simulation', 'Console Logging', 'Zero-Config SMTP']
@@ -128,6 +128,54 @@ export const ApiInfo = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Stripe Test Cards Guide Section */}
+      <div className="glass-panel-static api-info-gemini-style-030" >
+        <h2 className="api-info-gemini-style-029">
+          <CreditCard size={20} className="api-info-gemini-style-028" /> Stripe Test Cards Guide
+        </h2>
+        <p className="api-info-gemini-style-027">
+          To test checkouts in development mode, use any future expiry date (e.g. <code>12/28</code>) and any 3-digit CVC (e.g. <code>123</code>) with the following card numbers:
+        </p>
+        <div className="api-info-gemini-style-026">
+          <table className="api-info-gemini-style-025">
+            <thead>
+              <tr className="api-info-gemini-style-024">
+                <th className="api-info-gemini-style-023">Scenario</th>
+                <th className="api-info-gemini-style-022">Card Number</th>
+                <th className="api-info-gemini-style-021">Expected Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="api-info-gemini-style-020">
+                <td className="api-info-gemini-style-019">Success Payment</td>
+                <td className="api-info-gemini-style-018">4242 4242 4242 4242</td>
+                <td className="api-info-gemini-style-017">Succeeds and registers the orders.</td>
+              </tr>
+              <tr className="api-info-gemini-style-016">
+                <td className="api-info-gemini-style-015">Incorrect CVC</td>
+                <td className="api-info-gemini-style-014">4000 0000 0000 0127</td>
+                <td className="api-info-gemini-style-013">Fails with CVC security code error.</td>
+              </tr>
+              <tr className="api-info-gemini-style-012">
+                <td className="api-info-gemini-style-011">Expired Card</td>
+                <td className="api-info-gemini-style-010">4000 0000 0000 0069</td>
+                <td className="api-info-gemini-style-009">Fails with Card Expired error.</td>
+              </tr>
+              <tr className="api-info-gemini-style-008">
+                <td className="api-info-gemini-style-007">Insufficient Funds</td>
+                <td className="api-info-gemini-style-006">4000 0000 0000 9995</td>
+                <td className="api-info-gemini-style-005">Fails with card declined / insufficient funds.</td>
+              </tr>
+              <tr className="api-info-gemini-style-004">
+                <td className="api-info-gemini-style-003">Lost / Stolen Card</td>
+                <td className="api-info-gemini-style-002">4000 0000 0000 9987</td>
+                <td className="api-info-gemini-style-001">Fails with Lost or Stolen status error.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ const orderService = require('../services/orderService');
 
 const placeOrder = async (req, res, next) => {
   try {
-    const { shippingAddress, items, paymentDetails } = req.body;
+    const { shippingAddress, items, paymentIntentId } = req.body;
     const buyerId = req.user.id;
 
     if (!shippingAddress) {
@@ -23,7 +23,7 @@ const placeOrder = async (req, res, next) => {
       buyerId,
       shippingAddress,
       items,
-      paymentDetails
+      paymentIntentId
     }, req);
 
     res.status(201).json({

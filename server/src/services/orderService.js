@@ -4,7 +4,7 @@ const { logEvent } = require('../utils/logger');
 const { createNotification } = require('./notificationService');
 const mongoose = require('mongoose');
 
-const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, req = null) => {
+const placeOrder = async ({ buyerId, shippingAddress, items, paymentIntentId }, req = null) => {
   const transaction = await sequelize.transaction();
 
   try {
@@ -26,8 +26,10 @@ const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, r
       product.stockQuantity -= item.quantity;
       await product.save({ transaction });
 
+      const rates = { USD: 1.0, ILS: 0.27, EUR: 1.08 };
+      const rate = rates[product.currency || 'USD'] || 1.0;
       const priceAtPurchase = parseFloat(product.price);
-      totalPrice += priceAtPurchase * item.quantity;
+      totalPrice += priceAtPurchase * rate * item.quantity;
 
       itemsToCreate.push({
         productId: product.id,
@@ -38,17 +40,28 @@ const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, r
       });
     }
 
-    // Enforce payment details validation to prevent security bypasses
-    if (!paymentDetails || !paymentDetails.cardLast4 || !paymentDetails.cardExpiry) {
-      throw { statusCode: 400, message: 'Validation Error: Payment card details and expiry are required to place an order.' };
+    // Enforce payment intent ID validation
+    if (!paymentIntentId) {
+      throw { statusCode: 400, message: 'Validation Error: Stripe paymentIntentId is required to complete checkout.' };
     }
 
-    // Call processMockPayment to simulate credit card clearing with the payment provider
-    const { processMockPayment } = require('./externalApiService');
-    const paymentResult = await processMockPayment(totalPrice, paymentDetails);
+    // Verify payment state with Stripe
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (err) {
+      throw { statusCode: 400, message: `Stripe Error: Failed to retrieve payment intent ${paymentIntentId}. ${err.message}` };
+    }
 
-    if (!paymentResult.success) {
-      throw { statusCode: 402, message: paymentResult.message || 'Payment Declined by mock provider.' };
+    if (paymentIntent.status !== 'succeeded') {
+      throw { statusCode: 402, message: `Payment Status: ${paymentIntent.status}. The payment has not completed successfully.` };
+    }
+
+    // Ensure the charged amount matches our calculated total to prevent price tampering
+    const chargedAmount = paymentIntent.amount / 100;
+    if (Math.abs(chargedAmount - totalPrice) > 0.01) {
+      throw { statusCode: 400, message: `Validation Error: Stripe charged amount ($${chargedAmount}) does not match order calculation ($${totalPrice}).` };
     }
 
     // Group items by sellerId

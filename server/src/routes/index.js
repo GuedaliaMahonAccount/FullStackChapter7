@@ -9,6 +9,7 @@ const adminRoutes = require('./adminRoutes');
 const currencyRoutes = require('./currencyRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const paymentRoutes = require('./paymentRoutes');
 
 // Mount sub-routers
 router.use('/auth', authRoutes);
@@ -19,6 +20,7 @@ router.use('/admin', adminRoutes);
 router.use('/currency', currencyRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/payment', paymentRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

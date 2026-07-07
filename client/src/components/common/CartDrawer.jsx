@@ -78,6 +78,11 @@ export const CartDrawer = ({ isOpen, onClose }) => {
                   </h4>
                   <span className="cart-drawer-style-008">
                     {formatPrice(item.price, item.currency)}
+                    {item.currency !== 'USD' && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                        (≈ {formatPrice(parseFloat(item.price) * ({ ILS: 0.27, EUR: 1.08 }[item.currency] || 1.0), 'USD')})
+                      </span>
+                    )}
                   </span>
 
                   <div className="cart-drawer-style-007">
@@ -126,14 +131,12 @@ export const CartDrawer = ({ isOpen, onClose }) => {
               <span className="cart-drawer-style-002">
                 {(() => {
                   if (cart.length === 0) return '$0.00';
-                  const firstCurrency = cart[0].currency || 'USD';
-                  const allSame = cart.every(item => (item.currency || 'USD') === firstCurrency);
-                  const total = getCartTotal();
-                  if (allSame) {
-                    return formatPrice(total, firstCurrency);
-                  } else {
-                    return formatPrice(total, 'USD') + ' (USD)';
-                  }
+                  const rates = { USD: 1.0, ILS: 0.27, EUR: 1.08 };
+                  const totalUSD = cart.reduce((sum, item) => {
+                    const rate = rates[item.currency || 'USD'] || 1.0;
+                    return sum + (parseFloat(item.price) * rate * item.quantity);
+                  }, 0);
+                  return formatPrice(totalUSD, 'USD');
                 })()}
               </span>
             </div>

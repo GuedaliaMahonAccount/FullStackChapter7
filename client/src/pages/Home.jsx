@@ -367,12 +367,12 @@ export const Home = () => {
             })}
             </div>
             {hasMore && products.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+              <div className="home-gemini-style-002">
                 <button 
                   onClick={handleLoadMore} 
                   disabled={isMoreLoading} 
-                  className="btn btn-secondary"
-                  style={{ minWidth: '150px' }}
+                  className="btn btn-secondary home-gemini-style-001"
+                  
                 >
                   {isMoreLoading ? (
                     <span className="spinner spinner-xs" />
