@@ -38,12 +38,14 @@ const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, r
       });
     }
 
+    // Enforce payment details validation to prevent security bypasses
+    if (!paymentDetails || !paymentDetails.cardLast4 || !paymentDetails.cardExpiry) {
+      throw { statusCode: 400, message: 'Validation Error: Payment card details and expiry are required to place an order.' };
+    }
+
     // Call processMockPayment to simulate credit card clearing with the payment provider
     const { processMockPayment } = require('./externalApiService');
-    const paymentResult = await processMockPayment(totalPrice, paymentDetails || {
-      cardLast4: '4111', // Simulated fallback card details
-      cardExpiry: '12/28'
-    });
+    const paymentResult = await processMockPayment(totalPrice, paymentDetails);
 
     if (!paymentResult.success) {
       throw { statusCode: 402, message: paymentResult.message || 'Payment Declined by mock provider.' };
@@ -68,6 +70,7 @@ const placeOrder = async ({ buyerId, shippingAddress, items, paymentDetails }, r
       // Create core order record in MySQL
       const order = await Order.create({
         buyerId,
+        sellerId,
         totalPrice: sellerTotal,
         shippingAddress,
         paymentStatus: 'paid'
@@ -204,6 +207,7 @@ const getOrderDetails = async (orderId) => {
   return {
     orderId: order.id,
     buyer: order.buyer,
+    sellerId: order.sellerId,
     totalPrice: order.totalPrice,
     shippingAddress: order.shippingAddress,
     paymentStatus: order.paymentStatus,
@@ -273,6 +277,12 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
     throw { statusCode: 400, message: 'Cannot modify a collected order.' };
   }
   
+  const allowedStatuses = ['Pending', 'Ready', 'Shipped', 'Collected', 'Cancelled'];
+
+  if (!allowedStatuses.includes(status)) {
+    throw { statusCode: 400, message: 'Invalid order status.' };
+  }
+   
   if (status !== 'Cancelled') {
     const currIndex = statusOrder.indexOf(currentStatus);
     const nextIndex = statusOrder.indexOf(status);
@@ -337,61 +347,52 @@ const updateOrderStatus = async ({ orderId, status, notes = '', carrierName = ''
 };
 
 const getSellerOrders = async (sellerId) => {
-  const orderItems = await OrderItem.findAll({
+  const orders = await Order.findAll({
+    where: { sellerId },
     include: [
+      { model: User, as: 'buyer', attributes: ['id', 'fullName', 'email'] },
       {
-        model: Product,
-        as: 'product',
-        where: { sellerId }
-      },
-      {
-        model: Order,
-        as: 'order',
-        include: [
-          { model: User, as: 'buyer', attributes: ['id', 'fullName', 'email'] }
-        ]
+        model: OrderItem,
+        as: 'items',
+        include: [{ model: Product, as: 'product', attributes: ['id', 'title', 'imageUrl'] }]
       }
-    ]
+    ],
+    order: [['createdAt', 'DESC']]
   });
 
-  const ordersMap = new Map();
-  for (const item of orderItems) {
-    const order = item.order;
-    if (!order) continue;
-    if (!ordersMap.has(order.id)) {
-      let currentStatus = 'Pending';
-      if (mongoose.connection.readyState === 1) {
-        try {
-          const tracking = await OrderTracking.findOne({ order_id: order.id }, { current_status: 1 });
-          if (tracking) currentStatus = tracking.current_status;
-        } catch (err) {
-          // ignore
-        }
+  const formattedOrders = [];
+  for (const order of orders) {
+    let currentStatus = 'Pending';
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const tracking = await OrderTracking.findOne({ order_id: order.id }, { current_status: 1 });
+        if (tracking) currentStatus = tracking.current_status;
+      } catch (err) {
+        // ignore
       }
-      ordersMap.set(order.id, {
-        id: order.id,
-        totalPrice: order.totalPrice,
-        paymentStatus: order.paymentStatus,
-        createdAt: order.createdAt,
-        buyer: order.buyer,
-        status: currentStatus,
-        items: []
-      });
     }
 
-    ordersMap.get(order.id).items.push({
-      id: item.id,
-      quantity: item.quantity,
-      priceAtPurchase: item.priceAtPurchase,
-      product: {
-        id: item.product.id,
-        title: item.product.title,
-        imageUrl: item.product.imageUrl
-      }
+    formattedOrders.push({
+      id: order.id,
+      totalPrice: order.totalPrice,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      buyer: order.buyer,
+      status: currentStatus,
+      items: order.items.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        priceAtPurchase: item.priceAtPurchase,
+        product: {
+          id: item.product?.id,
+          title: item.product?.title,
+          imageUrl: item.product?.imageUrl
+        }
+      }))
     });
   }
 
-  return Array.from(ordersMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return formattedOrders;
 };
 
 const getAllOrders = async () => {

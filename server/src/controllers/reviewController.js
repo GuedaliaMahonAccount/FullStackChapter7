@@ -10,6 +10,14 @@ const addReview = async (req, res, next) => {
       });
     }
 
+    const parsedRating = parseInt(rating, 10);
+    if (Number.isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be a number between 1 and 5.'
+      });
+    }
+
     const review = await reviewService.createReview({
       rating: parseInt(rating, 10),
       comment,

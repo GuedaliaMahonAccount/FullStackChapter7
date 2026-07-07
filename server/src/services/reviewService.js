@@ -13,7 +13,7 @@ const createReview = async ({ rating, comment, productId, buyerId }, req = null)
   }
 
   const buyer = await User.findByPk(buyerId);
-  const buyerName = buyer ? buyer.fullName : 'קונה';
+  const buyerName = buyer ? buyer.fullName : 'buyer';
 
   // Check if buyer already reviewed this product
   const existing = await Review.findOne({

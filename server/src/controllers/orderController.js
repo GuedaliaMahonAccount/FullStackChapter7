@@ -45,7 +45,7 @@ const getOrderDetails = async (req, res, next) => {
     const isAuthorized = 
       req.user.role === 'admin' || 
       orderDetails.buyer.id === req.user.id || 
-      orderDetails.items.some(item => item.product.sellerId === req.user.id);
+      orderDetails.sellerId === req.user.id;
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -105,7 +105,7 @@ const updateOrderStatusBySeller = async (req, res, next) => {
     // Retrieve order details to check if the user is the seller for any of the items
     const orderDetails = await orderService.getOrderDetails(id);
     
-    const isSeller = orderDetails.items.some(item => item.product.sellerId === sellerId);
+    const isSeller = orderDetails.sellerId === sellerId;
     const isAdmin = req.user.role === 'admin';
 
     if (!isSeller && !isAdmin) {

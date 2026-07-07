@@ -17,6 +17,15 @@ const Order = sequelize.define('Order', {
       key: 'id'
     }
   },
+  sellerId: {
+    type: DataTypes.STRING(24),
+    allowNull: false,
+    field: 'seller_id',
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   totalPrice: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

@@ -23,6 +23,10 @@ Product.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
 User.hasMany(Order, { foreignKey: 'buyerId', as: 'orders' });
 Order.belongsTo(User, { foreignKey: 'buyerId', as: 'buyer' });
 
+// User (Seller) <-> Order
+User.hasMany(Order, { foreignKey: 'sellerId', as: 'sales' });
+Order.belongsTo(User, { foreignKey: 'sellerId', as: 'seller' });
+
 // 5. Order <-> OrderItem
 Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items', onDelete: 'CASCADE' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });

@@ -269,6 +269,7 @@ const seedDatabase = async () => {
       // Order 1
       const order1 = await Order.create({
         buyerId: usersMap['alice@c2c.com'],
+        sellerId: usersMap['john@c2c.com'],
         totalPrice: 120.00,
         shippingAddress: '123 Dizengoff St, Tel Aviv, Israel',
         paymentStatus: 'paid'
@@ -283,6 +284,7 @@ const seedDatabase = async () => {
       // Order 2
       const order2 = await Order.create({
         buyerId: usersMap['charlie@c2c.com'],
+        sellerId: usersMap['jane@c2c.com'],
         totalPrice: 899.00,
         shippingAddress: '45 Rothschild Blvd, Tel Aviv, Israel',
         paymentStatus: 'paid'
@@ -297,6 +299,7 @@ const seedDatabase = async () => {
       // Order 3
       const order3 = await Order.create({
         buyerId: usersMap['john@c2c.com'],
+        sellerId: usersMap['bob@c2c.com'],
         totalPrice: 199.99,
         shippingAddress: '88 Ibn Gabirol St, Tel Aviv, Israel',
         paymentStatus: 'paid'
@@ -311,6 +314,7 @@ const seedDatabase = async () => {
       // Order 4
       const order4 = await Order.create({
         buyerId: usersMap['alice@c2c.com'],
+        sellerId: usersMap['jane@c2c.com'],
         totalPrice: 50.00,
         shippingAddress: '123 Dizengoff St, Tel Aviv, Israel',
         paymentStatus: 'paid'
