@@ -121,3 +121,15 @@ To make it as easy as possible for instructors to evaluate the project, all exte
 
 5. **Frankfurter Exchange Rates (`https://api.frankfurter.app/`)**:
    - **Purpose:** Fetches current ILS exchange rates to convert and display foreign-currency item listings in local Israeli currency (ILS).
+
+
+
+
+
+
+
+
+
+
+# if you want delete network fetch log uncessary, write this into the filter:
+-stripe -openfreemap -komoot -unsplash -pexels -frankfurter -project-osrm -open-meteo -googleapis -gstatic -mymemory -openfoodfacts -openlibrary -upcitemdb

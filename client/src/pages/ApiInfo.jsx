@@ -9,9 +9,9 @@ export const ApiInfo = () => {
     {
       title: 'Photon Geocoding API',
       icon: <MapPin size={22} className="api-info-style-014" />,
-      endpoint: 'https://photon.komoot.io/api/',
-      description: 'Used for address auto-completion and geocoding coordinates lookup. Whenever sellers enter coordinates or buyers search checkout delivery details, Photon queries OpenStreetMap data to autocomplete and fill fields instantly.',
-      badges: ['Keyless', 'OpenStreetMap', 'Autocomplete']
+      endpoint: 'GET /api/geocoding/reverse & Direct GET https://photon.komoot.io/api/',
+      description: 'Used for address auto-completion (direct client-side to prevent backend load) and reverse geocoding coordinates lookup (proxied via backend to bypass user-agent block policies and secure request caching).',
+      badges: ['Keyless', 'OpenStreetMap', 'Hybrid Proxied']
     },
     {
       title: 'OSRM Routing Engine',

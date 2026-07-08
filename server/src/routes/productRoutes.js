@@ -4,25 +4,26 @@ const productController = require('../controllers/productController');
 const { verifyToken } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// Public routes
+// All product routes require authentication
+router.use(verifyToken);
+
 router.get('/', productController.getProducts);
 
 // Protected: get logged-in seller's own products
-router.get('/mine', verifyToken, productController.getMyProducts);
+router.get('/mine', productController.getMyProducts);
 
 // Protected: suggest description using AI
-router.post('/suggest-description', verifyToken, productController.suggestDescription);
+router.post('/suggest-description', productController.suggestDescription);
 
 // Protected: search Pexels images securely via proxy
-router.get('/pexels-search', verifyToken, productController.searchPexels);
+router.get('/pexels-search', productController.searchPexels);
 
-// Public: single product detail (must be AFTER special routes to prevent parameter shadowing)
+// Single product detail (must be AFTER special routes to prevent parameter shadowing)
 router.get('/:id', productController.getProductDetail);
 
-
-// Protected routes (Only buyers/sellers can upload items)
-router.post('/', verifyToken, upload.single('image'), productController.createProduct);
-router.put('/:id', verifyToken, upload.single('image'), productController.updateProductListing);
-router.delete('/:id', verifyToken, productController.deleteProductListing);
+// Upload/edit/delete items (Only buyers/sellers can upload items)
+router.post('/', upload.single('image'), productController.createProduct);
+router.put('/:id', upload.single('image'), productController.updateProductListing);
+router.delete('/:id', productController.deleteProductListing);
 
 module.exports = router;

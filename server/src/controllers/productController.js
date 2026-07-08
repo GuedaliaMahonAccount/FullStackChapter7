@@ -164,6 +164,7 @@ const suggestDescription = async (req, res, next) => {
           signal: controller.signal
         });
       } else {
+        console.log('Gemini API key is not configured, falling back to mlvoca API...');
         // Use mlvoca API (fallback)
         response = await fetch('https://mlvoca.com/api/generate', {
           method: 'POST',
@@ -192,6 +193,7 @@ const suggestDescription = async (req, res, next) => {
         suggestedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       } else {
         suggestedText = data.response || '';
+        console.log('Successfully generated description using mlvoca API.');
       }
 
       // Clean up thinking process if any

@@ -113,7 +113,7 @@ export const useFetch = () => {
         const response = await fetch(url, config);
         
         // Auto logout only if token is invalid/expired (401)
-        if (response.status === 401) {
+        if (response.status === 401 && endpoint !== '/auth/login') {
           logout();
           throw new Error('Session expired. Please log in again.');
         }

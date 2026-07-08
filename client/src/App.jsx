@@ -30,10 +30,24 @@ function App() {
 
             <div className="app-layout-style-001">
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Home />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
+                <Route
+                  path="/products/:id"
+                  element={
+                    <ProtectedRoute>
+                      <ProductDetail />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/api-info" element={<ApiInfo />} />
 
                 {/* Protected Routes */}

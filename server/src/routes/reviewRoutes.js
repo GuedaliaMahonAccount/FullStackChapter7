@@ -3,7 +3,9 @@ const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-router.post('/', verifyToken, reviewController.addReview);
+router.use(verifyToken);
+
+router.post('/', reviewController.addReview);
 router.get('/product/:productId', reviewController.getProductReviews);
 
 module.exports = router;

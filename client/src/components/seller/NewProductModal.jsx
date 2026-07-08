@@ -118,13 +118,12 @@ export const NewProductModal = ({ isOpen, onClose, onSuccess }) => {
     return parts.join(', ') || 'Selected Location';
   };
 
-  // Photon reverse-geocode
+  // Photon reverse-geocode via backend proxy
   const reverseGeocode = async (lat, lng) => {
     try {
-      const response = await fetch(`https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`);
-      const data = await response.json();
-      if (data && data.features && data.features.length > 0) {
-        const bestMatch = data.features[0];
+      const result = await get(`/geocoding/reverse?lon=${lng}&lat=${lat}`);
+      if (result.success && result.data && result.data.features && result.data.features.length > 0) {
+        const bestMatch = result.data.features[0];
         const addr = formatPhotonAddress(bestMatch);
         setAddress(addr);
         setAddressSearchQuery(addr);
