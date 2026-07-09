@@ -140,13 +140,15 @@ export const Navbar = ({ onToggleCart }) => {
 
           {/* Desktop Nav Links */}
           <div className="nav-links">
-            <Link
-              to="/"
-              className={`nav-link${isActive('/') ? ' active' : ''}`}
-            >
-              <Compass size={16} />
-              Explore
-            </Link>
+            {user && (
+              <Link
+                to="/"
+                className={`nav-link${isActive('/') ? ' active' : ''}`}
+              >
+                <Compass size={16} />
+                Explore
+              </Link>
+            )}
 
             {user && (
               <>
@@ -293,9 +295,11 @@ export const Navbar = ({ onToggleCart }) => {
 
       {/* Mobile Nav Drawer */}
       <div className={`mobile-nav${mobileOpen ? ' open' : ''}`}>
-        <Link to="/" className={`nav-link${isActive('/') ? ' active' : ''}`}>
-          <Compass size={18} /> Explore
-        </Link>
+        {user && (
+          <Link to="/" className={`nav-link${isActive('/') ? ' active' : ''}`}>
+            <Compass size={18} /> Explore
+          </Link>
+        )}
 
         {user && (
           <>

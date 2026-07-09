@@ -186,7 +186,7 @@ const getOrderDetails = async (orderId) => {
       {
         model: OrderItem,
         as: 'items',
-        include: [{ model: Product, as: 'product', attributes: ['id', 'title', 'imageUrl', 'sellerId'] }]
+        include: [{ model: Product, as: 'product', attributes: ['id', 'title', 'imageUrl', 'sellerId'], paranoid: false }]
       }
     ]
   });
@@ -367,7 +367,7 @@ const getSellerOrders = async (sellerId) => {
       {
         model: OrderItem,
         as: 'items',
-        include: [{ model: Product, as: 'product', attributes: ['id', 'title', 'imageUrl'] }]
+        include: [{ model: Product, as: 'product', attributes: ['id', 'title', 'imageUrl'], paranoid: false }]
       }
     ],
     order: [['createdAt', 'DESC']]

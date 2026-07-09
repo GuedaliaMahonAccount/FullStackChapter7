@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Product, User, Category, Review } = require('../models/sql');
+const { Product, User, Category, Review, sequelize } = require('../models/sql');
 const { logEvent } = require('../utils/logger');
 
 const createProduct = async ({ title, description, price, imageUrl, stockQuantity, categoryId, sellerId, latitude, longitude, address, currency, barcode }, req = null) => {
@@ -104,27 +104,43 @@ const getProductById = async (productId) => {
 };
 
 const deleteProduct = async (productId, sellerId, userRole, req = null) => {
-  const product = await Product.findByPk(productId);
-  if (!product) {
-    throw { statusCode: 404, message: 'Product listing not found.' };
+  const transaction = await sequelize.transaction();
+
+  try {
+    const product = await Product.findByPk(productId, { transaction });
+    if (!product) {
+      throw { statusCode: 404, message: 'Product listing not found.' };
+    }
+
+    // Verify ownership (unless Admin)
+    if (userRole !== 'admin' && product.sellerId !== sellerId) {
+      throw { statusCode: 403, message: 'Unauthorized: You are not the owner of this product listing.' };
+    }
+
+    // Soft delete associated reviews/comments under transaction
+    await Review.destroy({
+      where: { productId },
+      transaction
+    });
+
+    // Soft delete the product listing itself under transaction
+    await product.destroy({ transaction });
+
+    await transaction.commit();
+
+    // Log product deletion
+    await logEvent({
+      eventType: 'PRODUCT_DELETED',
+      userId: sellerId,
+      details: { productId, title: product.title },
+      req
+    });
+
+    return { success: true, message: 'Product listing and associated reviews deleted successfully.' };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-
-  // Verify ownership (unless Admin)
-  if (userRole !== 'admin' && product.sellerId !== sellerId) {
-    throw { statusCode: 403, message: 'Unauthorized: You are not the owner of this product listing.' };
-  }
-
-  await product.destroy();
-
-  // Log product deletion
-  await logEvent({
-    eventType: 'PRODUCT_DELETED',
-    userId: sellerId,
-    details: { productId, title: product.title },
-    req
-  });
-
-  return { success: true, message: 'Product listing deleted successfully.' };
 };
 
 const getProductsBySellerId = async (sellerId) => {

@@ -39,7 +39,8 @@ const Review = sequelize.define('Review', {
   }
 }, {
   tableName: 'reviews',
-  underscored: true
+  underscored: true,
+  paranoid: true
 });
 
 module.exports = Review;
