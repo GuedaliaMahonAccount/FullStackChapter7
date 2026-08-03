@@ -30,6 +30,10 @@ function App() {
 
             <div className="app-layout-style-001">
               <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
+                {/* Protected Routes */}
                 <Route
                   path="/"
                   element={
@@ -38,24 +42,11 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
                 <Route
                   path="/products/:id"
                   element={
                     <ProtectedRoute>
                       <ProductDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/api-info" element={<ApiInfo />} />
-
-                {/* Protected Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <SellerDashboard />
                     </ProtectedRoute>
                   }
                 />
@@ -68,6 +59,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <SellerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/orders"
                   element={
                     <ProtectedRoute>
@@ -75,6 +74,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/api-info" element={<ApiInfo />} />
                 <Route
                   path="/admin"
                   element={
