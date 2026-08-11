@@ -1,8 +1,9 @@
 const cache = new Map();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-// Standard browser User-Agent to avoid blocks/503 from external keyless APIs
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+// Custom User-Agent to identify our application for external keyless APIs (required by Nominatim)
+const USER_AGENT = 'C2CMarketplace/1.0 (contact@c2c.com)';
+
 
 const reverseGeocode = async (req, res, next) => {
   try {
@@ -49,7 +50,7 @@ const reverseGeocode = async (req, res, next) => {
       try {
         console.log(`[Geocoding] Falling back to Nominatim reverse lookup for coords: ${lat}, ${lon}`);
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`, {
-          headers: { 'User-Agent': 'C2CMarketplace/1.0 (contact@c2c.com)' }
+          headers: { 'User-Agent': USER_AGENT }
         });
         if (response.ok) {
           const nominatimData = await response.json();
