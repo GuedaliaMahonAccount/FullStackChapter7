@@ -19,25 +19,37 @@ A full-stack, Consumer-to-Consumer (C2C) neighborhood marketplace web applicatio
 
 ## 📸 Visual Showcase & Previews
 
-### 🗺️ Interactive Marketplace & Product Discovery
-| Live Geo-Marketplace Feed (MapLibre + OpenFreeMap) | Product Details, Currency & Translation |
-| :---: | :---: |
-| <img src="docs/screenshots/marketplace-feed-map.png" width="480" alt="Marketplace Feed & Map" /> | <img src="docs/screenshots/product-details-page.png" width="480" alt="Product Details & Converter" /> |
+### 🗺️ Live Geo-Marketplace & Interactive Map
+*Interactive neighborhood map powered by MapLibre GL & OpenFreeMap with real-time distance calculations and local currency conversions.*
+![Live Geo-Marketplace Feed](docs/screenshots/marketplace-feed-map.png)
 
-### 💳 Frictionless Checkout & Live Order Tracking
-| Stripe Sandbox Checkout with Test Card Helper | Real-Time Order Tracking Timeline (Socket.io) |
-| :---: | :---: |
-| <img src="docs/screenshots/checkout-stripe-payment.png" width="480" alt="Stripe Payment Checkout" /> | <img src="docs/screenshots/buyer-order-tracking.png" width="480" alt="Order Tracking Timeline" /> |
+### 🔍 Product Details, Dynamic Currency & Translation
+*Detailed listing page displaying live Frankfurter currency conversions to ILS and on-demand English-to-Hebrew translation via MyMemory API.*
+![Product Details](docs/screenshots/product-details-page.png)
 
-### 💼 Seller Hub & Geo-Listing Creation
-| Seller Dashboard & Sales Metrics | Create Listing with Barcode, AI & Pin Drop |
-| :---: | :---: |
-| <img src="docs/screenshots/seller-dashboard.png" width="480" alt="Seller Dashboard" /> | <img src="docs/screenshots/create-product-modal.png" width="480" alt="Create Product with Map Pinning" /> |
+### 💳 Frictionless Checkout & Stripe Sandbox Payment
+*Checkout page featuring Photon address auto-completion, one-click demo address fill, and integrated Stripe test card helper.*
+![Stripe Payment Checkout](docs/screenshots/checkout-stripe-payment.png)
+
+### 🚚 Real-Time Order Tracking Timeline (Socket.io)
+*Live buyer delivery tracking with state transition progress and chronological status log backed by WebSockets.*
+![Order Tracking Timeline](docs/screenshots/buyer-order-tracking.png)
+
+### 💼 Seller Hub & Performance Metrics
+*Seller overview showing active items, order volume, revenue analytics, and item management actions.*
+![Seller Dashboard](docs/screenshots/seller-dashboard.png)
+
+### ➕ Geo-Listing Creation with Barcode, AI & Pin-Drop
+*Seller modal with interactive MapLibre location pinning, barcode catalog autofill, and AI-suggested product descriptions.*
+![Create Product with Map Pinning](docs/screenshots/create-product-modal.png)
 
 ### 🛡️ System Administration & Dual-Database Audit Trail
-| MongoDB Real-Time Audit Event Trail | Admin Order Status Modification & Dispatch |
-| :---: | :---: |
-| <img src="docs/screenshots/admin-audit-logs-mongodb.png" width="480" alt="MongoDB Event Logs" /> | <img src="docs/screenshots/admin-manage-orders.png" width="480" alt="Admin Order Status Modification" /> |
+*Administrative security portal displaying real-time system audit logs stored in MongoDB.*
+![MongoDB Event Audit Trail](docs/screenshots/admin-audit-logs-mongodb.png)
+
+### 📦 Admin Order Dispatch & Status Management
+*Admin control center for managing order fulfillment and broadcasting live status updates to buyers.*
+![Admin Order Management](docs/screenshots/admin-manage-orders.png)
 
 ---
 
