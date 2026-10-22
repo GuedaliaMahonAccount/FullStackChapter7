@@ -16,11 +16,22 @@ export const Footer = () => {
             <span className="text-gradient">GeoMarket</span>
           </div>
           <p className="footer-copy">
-            &copy; {year} GeoMarket C2C — Academic Final Project
+            Developed by <strong>Eliyahu Kupinsky & Guedalia Mahon</strong> | Full Stack Developers &copy; {year}
           </p>
-          <Link to="/api-info" className="footer-link-api">
-            ℹ️ System APIs & Stripe Test Cards
-          </Link>
+          <div className="footer-links-row" style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', fontSize: '0.85rem' }}>
+            <Link to="/api-info" className="footer-link-api">
+              ℹ️ System APIs & Test Cards
+            </Link>
+            <a 
+              href="https://github.com/GuedaliaMahonAccount/FullStackChapter7" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="footer-link-api"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+            >
+              GitHub Project
+            </a>
+          </div>
         </div>
 
         {/* Stack Badges */}

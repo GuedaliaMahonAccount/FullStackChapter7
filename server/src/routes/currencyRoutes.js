@@ -3,8 +3,7 @@ const router = express.Router();
 const currencyController = require('../controllers/currencyController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-router.use(verifyToken);
-
+// Public: currency conversion and exchange rates
 router.get('/convert', currencyController.convertCurrency);
 router.get('/rates', currencyController.getRates);
 

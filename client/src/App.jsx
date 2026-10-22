@@ -33,23 +33,11 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Protected Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Home />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/products/:id"
-                  element={
-                    <ProtectedRoute>
-                      <ProductDetail />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Public Store & Product Browsing */}
+                <Route path="/" element={<Home />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
+
+                {/* Protected Routes (Require Authentication) */}
                 <Route
                   path="/cart"
                   element={

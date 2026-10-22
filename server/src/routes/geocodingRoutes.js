@@ -3,9 +3,7 @@ const router = express.Router();
 const geocodingController = require('../controllers/geocodingController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// Secure geocoding endpoints using authorization token middleware
-router.use(verifyToken);
-
+// Public: reverse geocode coordinate to human-readable address
 router.get('/reverse', geocodingController.reverseGeocode);
 
 module.exports = router;

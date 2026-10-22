@@ -140,34 +140,28 @@ export const Navbar = ({ onToggleCart }) => {
 
           {/* Desktop Nav Links */}
           <div className="nav-links">
-            {user && (
-              <Link
-                to="/"
-                className={`nav-link${isActive('/') ? ' active' : ''}`}
-              >
-                <Compass size={16} />
-                Explore
-              </Link>
-            )}
+            <Link
+              to="/"
+              className={`nav-link${isActive('/') ? ' active' : ''}`}
+            >
+              <Compass size={16} />
+              Explore
+            </Link>
 
-            {user && (
-              <>
-                <Link
-                  to="/dashboard"
-                  className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}
-                >
-                  <LayoutDashboard size={16} />
-                  My Shop
-                </Link>
-                <Link
-                  to="/orders"
-                  className={`nav-link${isActive('/orders') ? ' active' : ''}`}
-                >
-                  <ShoppingBag size={16} />
-                  My Orders
-                </Link>
-              </>
-            )}
+            <Link
+              to="/dashboard"
+              className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}
+            >
+              <LayoutDashboard size={16} />
+              My Shop
+            </Link>
+            <Link
+              to="/orders"
+              className={`nav-link${isActive('/orders') ? ' active' : ''}`}
+            >
+              <ShoppingBag size={16} />
+              My Orders
+            </Link>
 
             {user?.role === 'admin' && (
               <Link
@@ -180,21 +174,30 @@ export const Navbar = ({ onToggleCart }) => {
             )}
 
             {/* Cart Button */}
-            {user && (
-              <button
-                id="navbar-cart-btn"
-                onClick={onToggleCart}
-                className="btn btn-secondary btn-sm nav-cart-btn"
-              >
-                <ShoppingCart size={16} className="nav-cart-icon" />
-                <span>Cart</span>
-                {cartCount > 0 && (
-                  <span className="nav-cart-badge">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-            )}
+            <button
+              id="navbar-cart-btn"
+              onClick={() => {
+                if (!user) {
+                  navigate('/login', {
+                    state: {
+                      from: { pathname: '/cart' },
+                      message: 'Please sign in or create an account to view your cart.'
+                    }
+                  });
+                } else {
+                  onToggleCart();
+                }
+              }}
+              className="btn btn-secondary btn-sm nav-cart-btn"
+            >
+              <ShoppingCart size={16} className="nav-cart-icon" />
+              <span>Cart</span>
+              {user && cartCount > 0 && (
+                <span className="nav-cart-badge">
+                  {cartCount}
+                </span>
+              )}
+            </button>
 
             {/* Notification Bell */}
             {user && (
@@ -295,22 +298,16 @@ export const Navbar = ({ onToggleCart }) => {
 
       {/* Mobile Nav Drawer */}
       <div className={`mobile-nav${mobileOpen ? ' open' : ''}`}>
-        {user && (
-          <Link to="/" className={`nav-link${isActive('/') ? ' active' : ''}`}>
-            <Compass size={18} /> Explore
-          </Link>
-        )}
+        <Link to="/" className={`nav-link${isActive('/') ? ' active' : ''}`}>
+          <Compass size={18} /> Explore
+        </Link>
 
-        {user && (
-          <>
-            <Link to="/dashboard" className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}>
-              <LayoutDashboard size={18} /> My Shop
-            </Link>
-            <Link to="/orders" className={`nav-link${isActive('/orders') ? ' active' : ''}`}>
-              <ShoppingBag size={18} /> My Orders
-            </Link>
-          </>
-        )}
+        <Link to="/dashboard" className={`nav-link${isActive('/dashboard') ? ' active' : ''}`}>
+          <LayoutDashboard size={18} /> My Shop
+        </Link>
+        <Link to="/orders" className={`nav-link${isActive('/orders') ? ' active' : ''}`}>
+          <ShoppingBag size={18} /> My Orders
+        </Link>
 
         {user?.role === 'admin' && (
           <Link to="/admin" className="nav-link nav-admin-link">
@@ -318,15 +315,25 @@ export const Navbar = ({ onToggleCart }) => {
           </Link>
         )}
 
-        {user && (
-          <button
-            onClick={() => { onToggleCart(); setMobileOpen(false); }}
-            className="nav-link mobile-nav-cart-btn"
-          >
-            <ShoppingCart size={18} />
-            Cart {cartCount > 0 && `(${cartCount})`}
-          </button>
-        )}
+        <button
+          onClick={() => {
+            setMobileOpen(false);
+            if (!user) {
+              navigate('/login', {
+                state: {
+                  from: { pathname: '/cart' },
+                  message: 'Please sign in or create an account to view your cart.'
+                }
+              });
+            } else {
+              onToggleCart();
+            }
+          }}
+          className="nav-link mobile-nav-cart-btn"
+        >
+          <ShoppingCart size={18} />
+          Cart {user && cartCount > 0 && `(${cartCount})`}
+        </button>
 
         {user && (
           <button

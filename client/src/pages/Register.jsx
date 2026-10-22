@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { Compass, Mail, Lock, User, ShieldAlert, ArrowRight } from 'lucide-react';
 
@@ -10,8 +10,9 @@ export const Register = () => {
   const [errorMsg, setErrorMsg]   = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { post }  = useFetch();
-  const navigate  = useNavigate();
+  const { post }   = useFetch();
+  const navigate   = useNavigate();
+  const location   = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +21,13 @@ export const Register = () => {
     try {
       const result = await post('/auth/register', { email, password, fullName });
       if (result.success) {
-        navigate('/login', { state: { registered: true } });
+        navigate('/login', {
+          state: {
+            registered: true,
+            from: location.state?.from,
+            message: location.state?.message
+          }
+        });
       }
     } catch (err) {
       setErrorMsg(err.message || 'Registration failed. Please try again.');
@@ -134,7 +141,7 @@ export const Register = () => {
 
         <p className="auth-footer-text">
           Already have an account?{' '}
-          <Link to="/login" className="auth-footer-link">
+          <Link to="/login" state={location.state} className="auth-footer-link">
             Log in
           </Link>
         </p>

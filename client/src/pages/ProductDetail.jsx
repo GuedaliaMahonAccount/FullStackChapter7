@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useFetch, cachedExternalFetch } from '../hooks/useFetch';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ import { getImageUrl, formatPrice } from '../utils/format';
 export const ProductDetail = () => {
   const { id }       = useParams();
   const navigate     = useNavigate();
+  const location     = useLocation();
   const [product, setProduct]   = useState(null);
   const [loading, setLoading]   = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -772,6 +773,15 @@ export const ProductDetail = () => {
                         <button
                           id="product-add-to-cart-btn"
                           onClick={() => {
+                            if (!user) {
+                              navigate('/login', {
+                                state: {
+                                  from: location,
+                                  message: 'Please sign in or create an account to add items to your cart.'
+                                }
+                              });
+                              return;
+                            }
                             addToCart(product, qty);
                             setAdded(true);
                             setTimeout(() => setAdded(false), 2200);
@@ -814,6 +824,15 @@ export const ProductDetail = () => {
                     return (
                       <button
                         onClick={() => {
+                          if (!user) {
+                            navigate('/login', {
+                              state: {
+                                from: location,
+                                message: 'Please sign in or create an account to update items in your cart.'
+                              }
+                            });
+                            return;
+                          }
                           updateQuantity(product.id, qty);
                           setAdded(true);
                           setTimeout(() => setAdded(false), 2200);

@@ -319,7 +319,17 @@ export const Cart = () => {
               <MapPin size={13} /> Shipping
             </p>
             <div className="form-group address-autocomplete-wrapper cart-page-style-028" >
-              <label className="form-label" htmlFor="checkout-address">Delivery Address</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" htmlFor="checkout-address" style={{ margin: 0 }}>Delivery Address</label>
+                <button
+                  type="button"
+                  onClick={() => setShippingAddress('Dizengoff St 50, Tel Aviv')}
+                  className="btn-fill-demo"
+                  title="Click to fill sample delivery address"
+                >
+                  ⚡ Fill Demo Address
+                </button>
+              </div>
               <div className="cart-page-style-027">
                 <Search size={14} className="cart-page-style-026" />
                 <input

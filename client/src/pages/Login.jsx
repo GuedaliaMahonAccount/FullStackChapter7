@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { Compass, Mail, Lock, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Compass, Mail, Lock, ShieldAlert, ArrowRight, Info, CheckCircle } from 'lucide-react';
 
 export const Login = () => {
   const [email, setEmail]         = useState('');
@@ -13,8 +13,11 @@ export const Login = () => {
   const { login }    = useAuth();
   const { post }     = useFetch();
   const navigate     = useNavigate();
+  const location     = useLocation();
 
-  const redirectPath = '/';
+  const redirectPath = location.state?.from?.pathname || location.state?.from || '/';
+  const noticeMsg    = location.state?.message;
+  const isRegistered = location.state?.registered;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,6 +50,22 @@ export const Login = () => {
             Sign in to continue trading on GeoMarket
           </p>
         </div>
+
+        {/* Informational Notice */}
+        {noticeMsg && !errorMsg && (
+          <div className="alert alert-info auth-alert" style={{ background: 'rgba(56, 189, 248, 0.1)', borderColor: 'rgba(56, 189, 248, 0.3)', color: '#38bdf8' }}>
+            <Info size={16} className="auth-alert-icon" />
+            <span>{noticeMsg}</span>
+          </div>
+        )}
+
+        {/* Success on registration */}
+        {isRegistered && !errorMsg && !noticeMsg && (
+          <div className="alert alert-success auth-alert" style={{ background: 'rgba(52, 211, 153, 0.1)', borderColor: 'rgba(52, 211, 153, 0.3)', color: '#34d399' }}>
+            <CheckCircle size={16} className="auth-alert-icon" />
+            <span>Account created successfully! Please sign in with your credentials.</span>
+          </div>
+        )}
 
         {/* Error */}
         {errorMsg && (
@@ -118,7 +137,7 @@ export const Login = () => {
 
         <p className="auth-footer-text">
           Don't have an account?{' '}
-          <Link to="/register" className="auth-footer-link">
+          <Link to="/register" state={location.state} className="auth-footer-link">
             Create one
           </Link>
         </p>
@@ -126,14 +145,47 @@ export const Login = () => {
         {/* Quick Demo Login Info */}
         <div className="demo-accounts-box">
           <p className="demo-accounts-title">
-            🔑 Demo Accounts:
+            🔑 Quick Demo Accounts (Click to auto-fill or copy):
           </p>
           <div className="demo-accounts-list">
-            <div>
-              <strong>Admin:</strong> <code className="demo-accounts-code">admin@c2c.com</code> / <code className="demo-accounts-code">Admin123!</code>
+            <div
+              className="demo-account-item"
+              onClick={() => {
+                setEmail('admin@c2c.com');
+                setPassword('Admin123!');
+              }}
+              role="button"
+              tabIndex={0}
+              title="Click to fill Admin credentials"
+            >
+              <div className="demo-account-header">
+                <span className="demo-account-tag admin-tag">🛡️ Admin</span>
+                <span className="demo-account-click-hint">Click to fill ⚡</span>
+              </div>
+              <div className="demo-account-details">
+                <span>Email: <code className="demo-accounts-code">admin@c2c.com</code></span>
+                <span>Pass: <code className="demo-accounts-code">Admin123!</code></span>
+              </div>
             </div>
-            <div>
-              <strong>User:</strong> <code className="demo-accounts-code">john@c2c.com</code> / <code className="demo-accounts-code">Client123!</code>
+
+            <div
+              className="demo-account-item"
+              onClick={() => {
+                setEmail('john@c2c.com');
+                setPassword('Client123!');
+              }}
+              role="button"
+              tabIndex={0}
+              title="Click to fill Client credentials"
+            >
+              <div className="demo-account-header">
+                <span className="demo-account-tag client-tag">👤 Client</span>
+                <span className="demo-account-click-hint">Click to fill ⚡</span>
+              </div>
+              <div className="demo-account-details">
+                <span>Email: <code className="demo-accounts-code">john@c2c.com</code></span>
+                <span>Pass: <code className="demo-accounts-code">Client123!</code></span>
+              </div>
             </div>
           </div>
         </div>

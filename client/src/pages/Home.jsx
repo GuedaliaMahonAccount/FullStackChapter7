@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { OpenFreeMap } from '../components/common/OpenFreeMap';
 import { Search, MapPin, Layers, ShoppingCart, ArrowRight, TrendingUp } from 'lucide-react';
@@ -10,6 +10,7 @@ import { getImageUrl, formatPrice } from '../utils/format';
 export const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -342,7 +343,12 @@ export const Home = () => {
                         <button
                           onClick={() => {
                             if (!user) {
-                              navigate('/login');
+                              navigate('/login', {
+                                state: {
+                                  from: location,
+                                  message: 'Please sign in or create an account to add items to your cart.'
+                                }
+                              });
                             } else {
                               addToCart(product, 1);
                             }
