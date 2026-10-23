@@ -2,6 +2,11 @@
 
 A full-stack, Consumer-to-Consumer (C2C) neighborhood marketplace web application. Users can explore items on an interactive map, list products with geographic coordinates, calculate driving distances, convert foreign currencies, and track live order delivery transitions in real-time via WebSockets.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-geomarket.duckdns.org-00C7B7?style=for-the-badge&logo=google-chrome&logoColor=white)](https://geomarket.duckdns.org/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/GuedaliaMahonAccount/FullStackChapter7)
+
+🔗 **Live Deployment:** **[https://geomarket.duckdns.org/](https://geomarket.duckdns.org/)**
+
 ---
 
 > [!IMPORTANT]
@@ -13,7 +18,7 @@ A full-stack, Consumer-to-Consumer (C2C) neighborhood marketplace web applicatio
 > | **System Administrator** | `admin@c2c.com` | `Admin123!` | Access Admin Dashboard, inspect MongoDB event audit logs, update live order statuses, manage users |
 > | **Alternative Client** | `jane@c2c.com` | `Client123!` | Additional peer account to simulate buyer/seller transactions |
 >
-> *Tip: On the [Login Page](http://localhost:5173/login), you can click on the demo account cards to **auto-fill credentials in 1 click**.*
+> *Tip: On the [Live Login Page](https://geomarket.duckdns.org/login), you can click on the demo account cards to **auto-fill credentials in 1 click**.*
 
 ---
 
